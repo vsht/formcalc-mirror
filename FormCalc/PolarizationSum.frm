@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 17 Apr 13 th
+* last modified 3 Mar 14 th
 
 
 #procedure Fewest(foo)
@@ -113,7 +113,7 @@ ab `Vectors', `Invariants', dotM;
 .sort
 off oldFactArg;
 
-collect dotM;
+collect dotM, dotM, 50;
 
 #call InvSimplify(dotM)
 id dotM(0) = 0;
@@ -121,8 +121,8 @@ id dotM(0) = 0;
 repeat id TAG * dotM([x]?) = TAG * [x];
 id TAG = 1;
 
-makeinteger dotM;
-id dotM(dotM(?x)) = dotM(?x);
+*makeinteger dotM;
+*id dotM(dotM(?x)) = dotM(?x);
 
 argument dotM;
 id dotM([x]?) = dotM(nterms_([x]), [x]);
