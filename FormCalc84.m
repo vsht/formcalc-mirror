@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 8.4
 Copyright by Thomas Hahn 1996-2014
-last modified 16 Oct 14 by Thomas Hahn
+last modified 28 Oct 14 by Thomas Hahn
 
 Release notes:
 
@@ -42,7 +42,7 @@ Have fun!
 Print[""];
 Print["FormCalc 8.4"];
 Print["by Thomas Hahn"];
-Print["last revised 16 Oct 14"]
+Print["last revised 28 Oct 14"]
 
 
 (* symbols from FeynArts *)
@@ -1772,6 +1772,10 @@ Check[
 installed.  Did you run the compile script first?";
   Message[ReadForm::notcompiled, $ReadForm];
   Abort[] ]
+
+atexit[_[_, cmd_], ___] := $Epilog := (Uninstall[$ReadFormHandle]; cmd);
+atexit[] := $Epilog := Uninstall[$ReadFormHandle];
+atexit@@ OwnValues[$Epilog]
 
 $FormCmd = ToFileName[$FormCalcBin, "tform"] <>
   "|-w" <> ToString[Max[1, $ProcessorCount]]
@@ -4370,7 +4374,7 @@ Block[ {Hel},
 
 PolarizationSum[expr_, opt___?OptionQ] :=
 Block[ {abbr, dim, gauge, momelim, dotexp, nobrk, edit, retain,
-fullexpr, lor, indices, legs, masses, vars, hh},
+fullexpr, lor, indices, legs, masses, etasubst, vars, hh},
 
   If[ CurrentProc === {},
     Message[PolarizationSum::noprocess];
@@ -4394,6 +4398,9 @@ fullexpr, lor, indices, legs, masses, vars, hh},
     NoExpandRule /.
     FinalFormRules;
 
+  etasubst = Block[{dv = DownValues[eta], eta},
+    Cases[dv, _[_[lhs_], rhs_] :> lhs -> rhs] /. Reverse/@ FromFormRules];
+
   dim = If[dim === 0, D, 4];
   vars = FormVars[dim, {fullexpr, masses}, indices];
 
@@ -4403,7 +4410,10 @@ fullexpr, lor, indices, legs, masses, vars, hh},
 #define GaugeTerms \"" <> ToBool[gauge] <> "\"\n\n\
 #define MomElim \"" <> ToString[momelim && Length[MomSubst] === 0] <> "\"\n\
 #define DotExpand \"" <> ToBool[dotexp] <> "\"\n\n" <>
-    vars[[1]] <>
+    vars[[1]] <> "\n\
+#procedure EtaSubst\n" <>
+    FormId[etasubst] <> "\
+#endprocedure\n" <>
     FormProcs <>
     FormConst[vars, nobrk] <>
     FormCode["PolarizationSum.frm"]];

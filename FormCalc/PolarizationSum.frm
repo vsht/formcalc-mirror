@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 3 Mar 14 th
+* last modified 28 Oct 14 th
 
 
 #procedure Fewest(foo)
@@ -296,6 +296,8 @@ id k`i' = `k`i'';
 id eta`i' = 0;
 #enddo
 #endif
+
+#call EtaSubst
 
 id D = Dminus4Eps + 4;
 

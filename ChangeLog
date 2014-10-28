@@ -1,3 +1,8 @@
+28 Oct 14:
+
+- Made PolarizationSum honor definitions for eta[i].
+
+
 19 Oct 14:
 
 - Made $ReadFormHandle publicly available, use it to do
