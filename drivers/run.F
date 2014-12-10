@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 31 Jul 14 th
+* last modified 8 Dec 14 th
 
 
 * Whether to run in debugging mode
@@ -135,6 +135,7 @@ c#define NO_EXCLUSION_LIMITS
 #define MINEVAL 0
 #define MAXEVAL 50000
 #define STATEFILE ""
+#define SPIN -1
 
 * for Vegas:
 #define NSTART 1000
@@ -144,6 +145,7 @@ c#define NO_EXCLUSION_LIMITS
 
 * for Suave:
 #define NNEW 1000
+#define NMIN 2
 #define FLATNESS 50
 
 * for Divonne:

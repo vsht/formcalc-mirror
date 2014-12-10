@@ -1,3 +1,13 @@
+27 Nov 14:
+
+- Upgraded to Cuba 4.1.
+
+
+4 Nov 14:
+
+- Minor fixes in drivers/tools/fcc for Mathematica 10.0.1.
+
+
 28 Oct 14:
 
 - Made PolarizationSum honor definitions for eta[i].
@@ -20,7 +30,7 @@
 
 - Split off model-specific definitions to FormCalc/ModelSpecific.m.
 
-- Disabled loading of model-specific defs of $NoModelSpecific = True.
+- Disabled loading of model-specific defs if $NoModelSpecific = True.
 
 
 8 Sep 14:

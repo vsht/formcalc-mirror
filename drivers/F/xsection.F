@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 10 Sep 14 th
+* last modified 8 Dec 14 th
 
 #define DRIVER
 
@@ -651,41 +651,41 @@ c	call NinjaFormCalcDebug(1)
 
 #if METHOD == VEGAS
 
-	  call vegas(ndim, NCOMP, integrand, USERDATA,
+	  call vegas(ndim, NCOMP, integrand, USERDATA, NVEC,
      &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE, SEED, MINEVAL, MAXEVAL,
      &      NSTART, NINCREASE, NBATCH,
-     &      GRIDNO, STATEFILE,
+     &      GRIDNO, STATEFILE, SPIN,
      &      neval, fail, result, error, prob)
 	  nregions = 1
 	  INFO "Vegas integration results:"
 
 #elif METHOD == SUAVE
 
-	  call suave(ndim, NCOMP, integrand, USERDATA,
+	  call suave(ndim, NCOMP, integrand, USERDATA, NVEC,
      &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE + FLAGS_LAST, SEED, MINEVAL, MAXEVAL,
-     &      NNEW, Re(FLATNESS), STATEFILE,
+     &      NNEW, NMIN, Re(FLATNESS), STATEFILE, SPIN,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Suave integration results:"
 
 #elif METHOD == DIVONNE
 
-	  call divonne(ndim, NCOMP, integrand, USERDATA,
+	  call divonne(ndim, NCOMP, integrand, USERDATA, NVEC,
      &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE, SEED, MINEVAL, MAXEVAL,
      &      KEY1, KEY2, KEY3, MAXPASS,
      &      Re(BORDER), Re(MAXCHISQ), Re(MINDEVIATION),
-     &      0, NDIM, 0, 0, 0, STATEFILE,
+     &      0, NDIM, 0, 0, 0, STATEFILE, SPIN,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Divonne integration results:"
 
 #else
 
-	  call cuhre(ndim, NCOMP, integrand, USERDATA,
+	  call cuhre(ndim, NCOMP, integrand, USERDATA, NVEC,
      &      Re(RELACCURACY), Re(ABSACCURACY),
-     &      VERBOSE + FLAGS_LAST, MINEVAL, MAXEVAL,
-     &      KEY, STATEFILE,
+     &      VERBOSE, MINEVAL, MAXEVAL,
+     &      KEY, STATEFILE, SPIN,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Cuhre integration results:"
 

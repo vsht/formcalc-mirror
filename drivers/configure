@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 30 Aug 14 th
+# last modified 11 Nov 14 th
 
 
 exec 2> ${LOGFILE:-/dev/null} 3>&1
@@ -260,7 +260,7 @@ case "`$CONF_FC --version -c 2>&1`" in
   *pgf*)
 	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} ${CONF_ARCH:+-Mvect=simd} ${CONF_DEBUG:+-Ktrap=fp} -Mextend -Minform=inform -g77libs ${CONF_STATIC:+-Bstatic} $CONF_M" ;;
   *ifort*)
-	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} $CONF_ARCH -extend_source -warn nouncalled -warn truncated_source -assume bscc $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel} ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} $CONF_M" ;;
+	CONF_FFLAGS="${CONF_DEBUG:--O3 -debug} $CONF_ARCH -extend_source -warn nouncalled -warn truncated_source -assume bscc $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel} ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} $CONF_M" ;;
   *alpha)
 	CONF_FFLAGS="${CONF_DEBUG:--O3 -g3} ${CONF_DEBUG:+-fpe0} -extend_source -warn truncated_source ${CONF_STATIC:+-non_shared}" ;;
   *sun* | *sparc*)

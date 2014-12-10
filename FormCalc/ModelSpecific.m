@@ -171,7 +171,9 @@ Sq[CB] = CB2;
 CB2/: CB2 + SB2 = 1;
 CB2/: CB2 TB2 = SB2;
 CB/: CB TB = SB;
-CB/: CB SB = S2B/2
+CB/: CB SB = S2B/2;
+CB2/: CB2 - SB2 = C2B;
+S2B/: S2B TB = 2 SB2
 
 Sq[CBA] = CBA2;
 Sq[SBA] = SBA2;

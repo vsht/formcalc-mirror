@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 8.4
 Copyright by Thomas Hahn 1996-2014
-last modified 28 Oct 14 by Thomas Hahn
+last modified 5 Nov 14 by Thomas Hahn
 
 Release notes:
 
@@ -42,7 +42,7 @@ Have fun!
 Print[""];
 Print["FormCalc 8.4"];
 Print["by Thomas Hahn"];
-Print["last revised 28 Oct 14"]
+Print["last revised 5 Nov 14"]
 
 
 (* symbols from FeynArts *)
@@ -1191,10 +1191,14 @@ case PolarizationSum will first invoke SquaredME and HelicityME (with
 Hel[_] = 0) to obtain the squared amplitude."
 
 GaugeTerms::usage =
-"GaugeTerms is an option of PolarizationSum.  With GaugeTerms -> False,
-the gauge-dependent terms in the polarization sum, which should
-eventually cancel in gauge-invariant subsets of diagrams, are omitted
-from the beginning."
+"GaugeTerms is an option of PolarizationSum.  It controls the
+treatment of the gauge-dependent terms in the polarization sum of
+massless vector bosons, which should eventually cancel in
+gauge-invariant subsets of diagrams. 
+GaugeTerms -> True keeps the gauge-dependent terms. 
+GaugeTerms -> False inserts the gauge-dependent terms, to let
+potential cancellations happen, and removes remaining eta vectors. 
+GaugeTerms -> Off omits the gauge-dependent terms completely."
 
 eta::usage =
 "eta[i] is a vector that defines a particular gauge via Pair[eta[i],
@@ -4265,12 +4269,6 @@ Conjugate[D] = D
 
 Conjugate[Dminus4] = Dminus4
 
-Re[Dminus4] ^= Dminus4
-
-Re[Finite] ^= Finite
-
-Re[Divergence] ^= Divergence
-
 Conjugate[Finite] ^= Finite
 
 Conjugate[Divergence] ^= Divergence
@@ -4307,9 +4305,7 @@ Conjugate[s[n_]] := s[n]
 
 Conjugate[Lor[n_]] := Lor[n]
 
-Conjugate[x_?RealQ] := x
-
-Conjugate[(x_?RealQ)^n_] := x^n
+Conjugate[(x_?RealQ)^n_.] := x^n
 
 Protect[Conjugate]
 
@@ -4319,6 +4315,8 @@ Unprotect[Re]
 Re[D] = D
 
 Re[Dminus4] ^= Dminus4
+
+Re[Finite] ^= Finite
 
 Re[Divergence] ^= Divergence
 
@@ -4330,9 +4328,9 @@ Re[p_Plus] := Re/@ p
 
 Re[d_Den] := Re/@ d
 
-Re[x_?RealQ y_.] := x Re[y]
+Re[(x_?RealQ)^n_.] := x^n
 
-Re[(x_?RealQ)^n_ y_.] := x^n Re[y]
+Re[(x_?RealQ)^n_. y_] := x^n Re[y]
 
 Protect[Re]
 
@@ -4407,7 +4405,7 @@ fullexpr, lor, indices, legs, masses, etasubst, vars, hh},
   hh = OpenForm["fc-pol-"];
   WriteString[hh, "\
 #define Dim \"", ToString[dim], "\"\n\
-#define GaugeTerms \"" <> ToBool[gauge] <> "\"\n\n\
+#define GaugeTerms \"" <> ToString[gauge] <> "\"\n\n\
 #define MomElim \"" <> ToString[momelim && Length[MomSubst] === 0] <> "\"\n\
 #define DotExpand \"" <> ToBool[dotexp] <> "\"\n\n" <>
     vars[[1]] <> "\n\

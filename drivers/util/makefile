@@ -20,7 +20,7 @@ CFLAGS += -I$(common) -I$(@D) -DHAVE_CONFIG_H
 
 COMMON_DEPS := $(common)/stddecl.h \
   $(common)/ChiSquare.c $(common)/Erf.c \
-  $(common)/CSample.c $(common)/Fork.c
+  $(common)/CSample.c $(common)/Parallel.c $(common)/sock.h
 
 VEGAS_C := $(vegas)/Vegas.c
 VEGAS_DEPS := $(COMMON_DEPS) $(common)/Random.c \
@@ -46,7 +46,7 @@ CUHRE_DEPS := $(COMMON_DEPS) \
   $(cuhre)/Rule.c $(cuhre)/Integrate.c
 
 CUBA := $(VEGAS_C) $(SUAVE_C) $(DIVONNE_C) $(CUHRE_C) \
-  $(common)/WorkerIni.c
+  $(common)/Fork.c $(common)/Global.c $(common)/Data.c
 
 
 OBJS := \
@@ -118,9 +118,12 @@ $(LIB)( $(kin)/VecCopy.o $(kin)/VecSet.o ): \
 
 $(LIB)( $(system)/parallel.o ): $(SRC)/distrib.h
 
-$(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS)
-$(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS)
-$(LIB)($(DIVONNE_C:.c=.o)): $(DIVONNE_C) $(DIVONNE_DEPS)
-$(LIB)($(CUHRE_C:.c=.o)): $(CUHRE_C) $(CUHRE_DEPS)
-$(LIB)($(common)/WorkerIni.o): $(common)/stddecl.h
+$(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS) 
+$(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS) 
+$(LIB)($(DIVONNE_C:.c=.o)): $(DIVONNE_C) $(DIVONNE_DEPS) 
+$(LIB)($(CUHRE_C:.c=.o)): $(CUHRE_C) $(CUHRE_DEPS) 
+$(LIB)($(common)/Fork.o): $(common)/Fork.c $(common)/stddecl.h $(common)/sock.h
+$(LIB)($(common)/Global.o): $(common)/Global.c $(common)/stddecl.h
+$(LIB)($(common)/Data.o): $(common)/Data.c $(common)/stddecl.h
+
 
