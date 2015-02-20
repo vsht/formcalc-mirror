@@ -1,3 +1,10 @@
+19 Feb 15:
+
+- Introduced functions for DebugLines, e.g. DebugLines -> foo
+  individually determines the debug output for each assignment by
+  testing whether foo[var -> expr] returns False, True, or a string.
+
+
 5 Feb 15:
 
 - Added missing value of NVEC, relevant for Cuba integration.

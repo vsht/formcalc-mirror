@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 8.4
 Copyright by Thomas Hahn 1996-2015
-last modified 23 Jan 15 by Thomas Hahn
+last modified 16 Feb 15 by Thomas Hahn
 
 Release notes:
 
@@ -42,7 +42,7 @@ Have fun!
 Print[""];
 Print["FormCalc 8.4"];
 Print["by Thomas Hahn"];
-Print["last revised 23 Jan 15"]
+Print["last revised 16 Feb 15"]
 
 
 (* symbols from FeynArts *)
@@ -1519,18 +1519,21 @@ the minimum LeafCount a common subexpression must have in order that a
 variable is introduced for it."
 
 DebugLines::usage =
-"DebugLines is an option of PrepareExpr.  It specifies whether debugging
-statements are written out for each variable in the input.  If instead of
-True a string is given, the debugging messages are prefixed by this string. 
-Use DebugLines -> All or DebugLines -> All[string] to extend the debug
-statements also to intermediate variables (e.g. the ones introduced for
-optimization). The actual debugging statements are constructed from the
+"DebugLines is an option of PrepareExpr.  It specifies whether debugging 
+statements are written out for each variable in the input.  If instead 
+of True or False a string is given, debugging messages are generated and 
+prefixed by this string. If a function is given, it is queried for each 
+variable assignment and its output, True, False, or a string, 
+individually determines generation of the debug statement.  Debugging 
+messages are usually generated for the expressions specified by the user 
+only.  To extend them to intermediate variables, e.g. the ones 
+introduced for optimization, use DebugLines -> All (or All[string] or 
+All[func]).  The actual debugging statements are constructed from the 
 items in $DebugCmd."
 
 FinalTouch::usage =
-"FinalTouch is an option of PrepareExpr.  It specifies a function which
-is applied to each final subexpression, such as will then be written out
-to the Fortran file."
+"FinalTouch is an option of PrepareExpr.  It specifies a function which 
+is applied to each final subexpression, just before write-out to file."
 
 ResetNumbering::usage =
 "ResetNumbering is an option of PrepareExpr.  It restarts numbering
@@ -3205,8 +3208,7 @@ OpenForm[stub_:"fc"] :=
 Block[ {hh},
   While[ FileType[tempfile = FormFile[stub, tempnum]] =!= None,
     ++tempnum ];
-  FCPrint[1, ""];
-  FCPrint[1, "preparing FORM code in ", tempfile];
+  FCPrint[1, "\npreparing FORM code in " <> tempfile];
   hh = OpenWrite[toform <> Escape[tempfile],
     FormatType -> InputForm, PageWidth -> 73];
   WriteString[hh, FormSetup];
@@ -3249,7 +3251,7 @@ Block[ {res},
   Switch[ edit,
     True, Pause[1]; Run[StringForm[$Editor, tempfile]]; Pause[3],
     Modal, Pause[1]; Run[StringForm[$EditorModal, tempfile]] ];
-  WriteString["stdout", "running FORM... "];
+  FCPrint[1, "running FORM... "];
   If[ Check[
         res = Set@@@ Level[
           {r, FromFormRules, {Dot -> p$$}},
@@ -3257,7 +3259,7 @@ Block[ {res},
         True,
         False] &&
     !retain, DeleteFile[tempfile] ];
-  FCPrint[1, "ok"];
+  FCPrint[1, "ok\n"];
   res
 ]
 
@@ -6424,7 +6426,7 @@ process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
   doloop = Hoist@@ Flatten[{expen}];
   new = Flatten[{expr}];
   vars = Cases[new, (Rule | RuleAdd)[var_, _] -> var, Infinity];
-  If[ MatchQ[debug, True | _String],
+  If[ !MatchQ[debug, False | All | _All],
     new = AddDebug[new, debug];
     debug = False ];
   new = process[new];
@@ -6432,7 +6434,8 @@ process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
   new = new /. CodeExpr[_, t_, x_] :>
     (vars = DeleteCases[vars, Alt@@ t]; x);
   tmps = Cases[new, (ru:Rule | RuleAdd)[var_, _] -> var, Infinity];
-  If[ debug =!= False, new = AddDebug[new, debug] ];
+  If[ debug =!= False,
+    new = AddDebug[new, debug /. {All[tag_] :> tag, All -> True}] ];
   CodeExpr[MaxDims[vars], Complement[tmps, vars], Flatten[new]]
 ]
 
@@ -6442,22 +6445,33 @@ Attributes[AddDebug] = {Listable}
 AddDebug[s_String, _] := s
 
 AddDebug[DoLoop[expr_, ind__], tag_] :=
-  DoLoop[{DebugLine[#1&@@@ {ind}, tag], AddDebug[expr, tag]}, ind]
+  DoLoop[{Deb[(#1&@@@ {ind}) -> 0, tag], AddDebug[expr, tag]}, ind]
 
 AddDebug[i_IndexIf, tag_] := MapIf[AddDebug[#, tag]&, i]
 
-AddDebug[(ru:Rule | RuleAdd)[var_, expr_], tag_] :=
-  {ru[var, expr], DebugLine[var, expr, tag]}
+AddDebug[ru:_Rule | _RuleAdd, tag_] := {ru, Deb[ru, tag]}
 
 
-DebugLine[var_, expr_, tag_] := DebugLine[var, tag] /; FreeQ[var, Pattern]
+Attributes[DebTag] = {HoldFirst}
 
-DebugLine[var_, expr_, tag_] :=
-  DebugLine[Cases[expr, var, Infinity, 1][[1]], tag]
+DebTag[_, False, __] = {}
 
-DebugLine[var_, All | True] := DebugLine[var]
+DebTag[_, True, var_, ___] := DebugLine[var]
 
-DebugLine[var_, All[tag_]] := DebugLine[var, tag]
+DebTag[t_, t_, var__] := DebugLine[var]
+
+DebTag[_, tag_, var_, _] := DebugLine[var, tag]
+
+
+Deb[ru_[var_, expr_], tag_] :=
+  Deb[ru[Cases[expr, var, Infinity, 1][[1]], expr], tag] /;
+  !FreeQ[var, Pattern]
+
+Deb[_[var_, ___], True] := DebugLine[var]
+
+Deb[_[var_, ___], tag_String] := DebugLine[var, tag]
+
+Deb[ru:_[var_, _], tag_] := DebTag[tag[ru], tag[ru], var, tag]
 
 
 Attributes[Prep] = {Listable}
