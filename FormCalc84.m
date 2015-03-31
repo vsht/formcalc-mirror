@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 8.4
 Copyright by Thomas Hahn 1996-2015
-last modified 16 Feb 15 by Thomas Hahn
+last modified 30 Mar 15 by Thomas Hahn
 
 Release notes:
 
@@ -42,7 +42,7 @@ Have fun!
 Print[""];
 Print["FormCalc 8.4"];
 Print["by Thomas Hahn"];
-Print["last revised 16 Feb 15"]
+Print["last revised 30 Mar 15"]
 
 
 (* symbols from FeynArts *)
@@ -55,7 +55,7 @@ BeginPackage["FeynArts`"]
   PropagatorDenominator, FeynAmpDenominator,
   FourMomentum, Internal, External, TheMass,
   Index, IndexDelta, IndexEps, IndexSum, SumOver,
-  MatrixTrace, FermionChain, NonCommutative,
+  MatrixTrace, FermionChain, NonCommutative, LeviCivita,
   CreateTopologies, ExcludeTopologies, Tadpoles,
   InitializeModel, $Model, Model, GenericModel, Reinitialize,
   InsertFields, InsertionLevel, ExcludeParticles,
@@ -303,7 +303,7 @@ EndPackage[]
 { DiracMatrix, DiracSlash, ChiralityProjector,
   DiracSpinor, MajoranaSpinor, DiracObject,
   PolarizationVector, PolarizationTensor,
-  MetricTensor, LeviCivita, FourVector, ScalarProduct,
+  MetricTensor, FourVector, ScalarProduct,
   Lorentz, Lorentz4, EpsilonScalar,
   SUNT, SUNF, SUNTSum, SUNEps, Colour, Gluon }
 
@@ -2594,8 +2594,8 @@ Options[ToFeynAmp] = {
 ToFeynAmp[amps___, opt___Rule] :=
 Block[ {proc},
   {proc} = ParseOpt[ToFeynAmp, opt] /. Automatic :>
-    Level[ Select[FromFormRules, !FreeQ[ {amps}, #[[1]] ]&],
-      {3}, Max];
+    Level[ {{{{1}}}, Select[FromFormRules, !FreeQ[ {amps}, #[[1]] ]&]},
+      {4}, Max];
   MapIndexed[ToAmp, FeynAmpList[Process -> proc][amps] /.
     Reverse/@ FromFormRules /.
     PolarizationVector | PolarizationTensor -> pol /.
@@ -4628,7 +4628,7 @@ FFWrite[0, __] = {}
 
 FFWrite[amp_, array_, file_] :=
 Block[ {ind, ff, mods},
-  ind = Cases[amp, SumOver[i_, r_] :> (Dim[i] = r; i), Infinity];
+  ind = Union[Cases[amp, SumOver[i_, r_] :> (Dim[i] = r; i), Infinity]];
   ff = FFList[amp /. unused[array] -> 0 /. fcs /. xrules /. {
     _SumOver -> 1,
     int:LoopIntegral[__] :> abbint[int] }, array];
