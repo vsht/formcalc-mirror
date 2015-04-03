@@ -5878,7 +5878,10 @@ OnlyIfEval[cond_, a_, b_] := Thread @ IndexIf[ cond,
   b /. Cases[{cond}, i_ == j_ -> (IndexDelta[i, j] -> 0)] ]
 
 
-FermionRC[m_, a_, b_, se_] :=
+Attributes[FermionRC] = {HoldRest}
+	(* HoldRest postpones TheMass until model is initialized *)
+
+FermionRC[se_, m_, a_, b_] :=
   m (a SEPart[LVectorCoeff, se] + b SEPart[RVectorCoeff, se]) +
      b SEPart[LScalarCoeff, se] + a SEPart[RScalarCoeff, se]
 
@@ -5886,7 +5889,7 @@ BosonRC[se_] := SEPart[Identity, se]
 
 
 MassRC[f_F, opt___Rule] :=
-  FermionRC[TheMass[f], 1/2, 1/2, ReTilde[SelfEnergy[f, opt]]]
+  FermionRC[ReTilde[SelfEnergy[f, opt]], TheMass[f], 1/2, 1/2]
 
 MassRC[f_, opt___Rule] := BosonRC[ReTilde[SelfEnergy[f, opt]]]
 
@@ -5898,10 +5901,11 @@ MassRC[f1_, f2_, opt___Rule] :=
 
 
 FieldRC[f_F, opt___Rule] :=
-Block[ {m = TheMass[f], se},
+Block[ {m, se},
   se = ReTilde[SelfEnergy[f, opt]];
+  m = TheMass[f];
   -{SEPart[LVectorCoeff, se], SEPart[RVectorCoeff, se]} -
-    FermionRC[m, m, m, ReTilde[DSelfEnergy[f]]]
+    FermionRC[ReTilde[DSelfEnergy[f]], m, m, m]
 ]
 
 FieldRC[f_, opt___Rule] := -BosonRC[ReTilde[DSelfEnergy[f, opt]]]
@@ -5917,14 +5921,19 @@ FieldRC[f1_, f2_, c_, opt___Rule] := OnlyIf[
 ]
 
 FieldRC2[f1_F, f2_F, c_, opt___Rule] :=
-Block[ {m1 = TheMass[f1], m2 = TheMass[f2]},
-  2/(m1^2 - m2^2) (FermionRC[m2, {m2, m1}, {m1, m2},
-    ReTilde[SelfEnergy[f2 -> f1, m2, opt]]] - c)
+Block[ {se, m1, m2},
+  se = ReTilde[SelfEnergy[f2 -> f1, TheMass[f2], opt]];
+  m1 = TheMass[f1];
+  m2 = TheMass[f2];
+  2/(m1^2 - m2^2) (FermionRC[se, m2, {m2, m1}, {m1, m2}] - c)
 ]
 
 FieldRC2[f1_, f2_, c_, opt___Rule] :=
-Block[ {m1 = TheMass[f1], m2 = TheMass[f2]},
-  2/(m1^2 - m2^2) (BosonRC[ReTilde[SelfEnergy[f2 -> f1, m2, opt]]] - c)
+Block[ {se, m1, m2},
+  se = ReTilde[SelfEnergy[f2 -> f1, TheMass[f2], opt]];
+  m1 = TheMass[f1];
+  m2 = TheMass[f2];
+  2/(m1^2 - m2^2) (BosonRC[se] - c)
 ]
 
 
@@ -5933,7 +5942,7 @@ TadpoleRC[f_, opt___Rule] :=
 
 
 WidthRC[f_F, opt___Rule] :=
-  FermionRC[TheMass[f], 1, 1, ImTilde[SelfEnergy[f, opt]]]
+  FermionRC[ImTilde[SelfEnergy[f, opt]], TheMass[f], 1, 1]
 
 WidthRC[f_, opt___Rule] :=
   BosonRC[ImTilde[SelfEnergy[f, opt]]]/TheMass[f]
