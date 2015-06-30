@@ -4578,14 +4578,15 @@ InvList[_] = {}
 
 
 pdefs[proc_] :=
-Block[ {qn, c = 0, defs},
+Block[ {qn, c = 0, mdefs, defs},
   qn = (##4&)@@@ Level[proc, {2}];
   qn = Union[Flatten[DeleteCases[qn, _?NumberQ, Infinity]]];
-  defs = Transpose[Map[pspec, List@@ proc, {2}], {2, 3, 1}];
-  { mdef[ "Mass_in", defs[[1, 1]] ] ,
-    mdef[ "Mass_out", defs[[1, 2]] ],
-    MapThread[pdef,
-      {Flatten[{"Generic", "Anti", ToCode/@ qn}], Flatten/@ Rest[defs]}] }
+  defs = Map[pspec, List@@ proc, {2}];
+  mdefs = Map[First, defs, {2}];
+  defs = Rest[Transpose[Flatten[defs, 1]]];
+  { mdef[ "Mass_in", mdefs[[1]] ] ,
+    mdef[ "Mass_out", mdefs[[2]] ],
+    MapThread[pdef, {Flatten[{"Generic", "Anti", ToCode/@ qn}], defs}] }
 ]
 
 mdef[x_, {s1_, sr___}] := {
