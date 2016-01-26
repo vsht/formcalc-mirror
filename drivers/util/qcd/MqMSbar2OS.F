@@ -2,7 +2,7 @@
 * compute the conversion factor from mq^MSbar(Q) -> mq^OS,
 * code is transcribed from RunDec's mMS2mOS function.
 * this file is part of FormCalc
-* last modified 12 Jan 16 th
+* last modified 16 Jan 16 th
 
 #include "types.h"
 
@@ -70,16 +70,6 @@
 
 	iloop = encLoop(nloop)
 	t = 2*log(Q/mMS)
-
-	PRINT *, "Q=", Q
-	PRINT *, "mMS=", mMS
-	PRINT *, "x-1=", Mquark(6)/mMS - 1
-	PRINT *, "DLite(1) =", DLite(1)
-	PRINT *, "DLite(2) =", DLite(2)
-	PRINT *, "DLite(3) =", DLite(3)
-	PRINT *, "DLite(4) =", DLite(4)
-	PRINT *, "DLite(5) =", DLite(5)
-	PRINT *, "DLite(6) =", DLite(6)
 
 	m = m*(1 + ifLoop(iloop,1)*as*(4/3D0/pi + 1/pi*t +
      &    ifLoop(iloop,2)*as*(

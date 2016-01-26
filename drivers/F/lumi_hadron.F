@@ -1,7 +1,7 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 14 Jan 16 th
+* last modified 22 Jan 16 th
 
 * This code links to the LHAPDF library.
 * The following variables are used:
@@ -58,7 +58,8 @@
 
 #include "xsection.h"
 
-	if( ior(parton1, parton2) .lt. 0 ) stop "parton1,2 not set"
+	if( parton1 .eq. -999 .or. parton2 .eq. -999 )
+     &    stop "parton1,2 not set"
 
 #ifdef M_INV
         call SetEnergy(fail, Re(M_INV), sqme)
@@ -102,6 +103,9 @@
         common /boost/ gam
 
 	logical tooSmall
+
+#include "inline.h"
+
 c	tooSmall(x) = x .lt. SQRTS_EPS .or. x .gt. 1 - SQRTS_EPS
 	tooSmall(x) = abs(.5D0 - x) .gt. .5D0 - SQRTS_EPS
 
@@ -127,7 +131,13 @@ c	tooSmall(x) = x .lt. SQRTS_EPS .or. x .gt. 1 - SQRTS_EPS
 	call evolvePDF(x, fscale, xPDF)
 	call evolvePDF(tau/x, fscale, tPDF)
 
-	fac = fac*xrange/(Var(PARTON_T)*x)*
+#ifdef M_INV
+#define DEN M_INV
+#else
+#define DEN Var(PARTON_T)
+#endif
+
+	fac = fac*xrange/(DEN*x)*
      &    (2 - IndexDelta(parton1, parton2))*
      &    ( tPDF(partonsign*parton1)*xPDF(parton2) +
      &      xPDF(partonsign*parton2)*tPDF(parton1) )

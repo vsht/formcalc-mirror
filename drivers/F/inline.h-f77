@@ -10,7 +10,6 @@
 #define INLINE_H
 
 #define signbit(i) ibits(i,31,1)
-#define IndexDelta(i,j) signbit(ieor(i,j)-1)
 
 #define SpiLV(iL,eL) (1-2*eL)*Vec(1+eL,1+eL,iL), Vec(2-eL,1+eL,iL)
 #define SpiLB(iL,eL) (1-2*eL)*Vec(1+eL,2-eL,iL), Vec(2-eL,2-eL,iL)
@@ -105,7 +104,8 @@ CT2Exp	ComplexType v3in(0:3)
 CT2Exp	ComplexType v4in(0:3)
 CT2Exp	ComplexType para(*)
 
-	RealType Sq, SInvariant, TInvariant
+	integer IndexDelta, IndexSign, IndexEps
+	RealType Sq, SqDiff, ThreeMom, SInvariant, TInvariant
 	ComplexType Pair, Eps_, Eps
 	ComplexType SxS
 	ComplexType SxV1, SxV2, SxB1, SxB2
@@ -125,8 +125,6 @@ CT2Exp	ComplexType para(*)
 	ComplexType ChainV6, ChainB6
 	ComplexType ChainV7, ChainB7
 	ComplexType ChainV8, ChainB8
-	integer IndexSign, IndexEps
-	RealType SqDiff, ThreeMom
 
 	ComplexType l1_, l2_, r1_, r2_
 	integer a_, b_, c_, d_, e_, f_, g_, h_
@@ -135,6 +133,16 @@ CT2Exp	ComplexType para(*)
 	ComplexType z_
 
 	Sq(z_) = Re(z_*Conjugate(z_))
+
+	IndexDelta(a_, b_) = 1 - signbit(ieor(a_ - b_, b_ - a_))
+
+	IndexSign(a_) = signbit(ior(a_, -a_)) - 2*signbit(a_)
+	IndexEps(a_, b_, c_) =
+     &    IndexSign(a_ - b_)*IndexSign(c_ - b_)*IndexSign(a_ - c_)
+
+	SqDiff(ma_, mb_) = (ma_ - mb_)*(ma_ + mb_)
+	ThreeMom(sqrtS_, ma_, mb_) = sqrt(SqDiff(
+     &    .5D0*(sqrtS_ - SqDiff(ma_, mb_)/sqrtS_), mb_ ))
 
 	SInvariant(a_, b_) =
      &    (Re(vec0(1,1,k0(a_))) + Re(vec0(1,1,k0(b_))))*
@@ -324,14 +332,6 @@ CT2Exp	ComplexType para(*)
      &    SxBxVxBxV2(SpiLV(iL_,eL_), a_, b_, c_, d_),
      &    BxVxBxVxS1(e_, f_, g_, h_, SpiRB(eR_,iR_)),
      &    BxVxBxVxS2(e_, f_, g_, h_, SpiRB(eR_,iR_)) )
-
-	IndexSign(a_) = signbit(ior(a_, -a_)) - 2*signbit(a_)
-	IndexEps(a_, b_, c_) =
-     &    IndexSign(a_ - b_)*IndexSign(c_ - b_)*IndexSign(a_ - c_)
-
-	SqDiff(ma_, mb_) = (ma_ - mb_)*(ma_ + mb_)
-	ThreeMom(sqrtS_, ma_, mb_) = sqrt(SqDiff(
-     &    .5D0*(sqrtS_ - SqDiff(ma_, mb_)/sqrtS_), mb_ ))
 
 CNNum	Vec(1,1,q1) = q1in(0) + q1in(3)
 CNNum	Vec(2,2,q1) = q1in(0) - q1in(3)

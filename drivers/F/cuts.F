@@ -2,7 +2,7 @@
 * routines to compute cuts
 * this file is part of FormCalc
 * Christian Schappacher, 2 Dec 13
-* last modified 14 Jan 16 th
+* last modified 18 Jan 16 cs
 
 
 ************************************************************************
@@ -22,15 +22,15 @@
 
 * Rapidity cuts:
 
-#ifndef HAVE_BOOST
+#ifdef HAVE_BOOST
 	RealType gam, y, omx2, eta
 	common /boost/ gam
-	y(i) = momspec(SPEC_RAP,i) - gam
+	y(i) = momspec(SPEC_RAP,i) - log(gam)
 	omx2(x) = (1 - x)*(1 + x)
-	eta(i) = atanh(tanh(momspec(SPEC_PRAP,i) - gam)/
+	eta(i) = atanh(tanh(y(i))/
      &    sqrt(omx2( 2*gam*momspec(SPEC_M,i)/
-     &      (momspec(SPEC_E,i)*(1 + gam**2 -
-     &        omx2(gam)*tanh(momspec(SPEC_PRAP,i)))) )))
+     &      (momspec(SPEC_E,i)*(1 + gam**2 +
+     &        omx2(gam)*tanh(momspec(SPEC_RAP,i)))) )))
 #else
 #define y(i) momspec(SPEC_RAP,i)
 #define eta(i) momspec(SPEC_PRAP,i)

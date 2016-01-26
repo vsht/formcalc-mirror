@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 13 Jan 16 th
+* last modified 22 Jan 16 th
 
 
 * Whether to run in debugging mode
@@ -141,7 +141,7 @@ c#define NO_EXCLUSION_LIMITS
 * The CUT1..20 together make up a single logical expression in Fortran
 * and may include logical operators, e.g.
 *   #define CUT1 CUT_kT(3) .gt. 10
-*   #define CUT2 .or. CUT_kT(4) .gt. 10
+*   #define CUT2 .and. CUT_kT(4) .gt. 10
 
 #define CUT1 .TRUE.
 #define CUT2

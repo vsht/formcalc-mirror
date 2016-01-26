@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.2
 Copyright by Thomas Hahn 1996-2016
-last modified 13 Jan 16 by Thomas Hahn
+last modified 24 Jan 16 by Thomas Hahn
 
 Release notes:
 
@@ -651,9 +651,16 @@ code aborts due to very long insertions)."
 
 PaVeReduce::usage =
 "PaVeReduce is an option of CalcFeynAmp.  False retains the one-loop
-tensor-coefficient functions.  Raw reduces them to scalar integrals but
-keeps the Gram determinants in the denominator in terms of dot products. 
-True simplifies the Gram determinants using invariants."
+tensor-coefficient functions.  LoopTools reduces all tensors not
+available in LoopTools.  True and Raw both reduce the tensors all the
+way down to scalar integrals but Raw keeps the Gram determinants in
+the denominator in terms of dot products while True simplifies them
+using invariants."
+
+LoopTools::usage =
+"LoopTools is a value for the PaVeReduce option of CalcFeynAmp.
+It specifies that only the tensor-coefficient functions not available
+in LoopTools are reduced."
 
 SortDen::usage =
 "SortDen is an option of CalcFeynAmp.  It determines whether the
@@ -1864,7 +1871,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.2
 
-$FormCalcVersion = "FormCalc 9.2 (13 Jan 2016)"
+$FormCalcVersion = "FormCalc 9.2 (24 Jan 2016)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -3562,10 +3569,10 @@ abbsel[{need__}, {omit__}] := Select[all,
 abbsel[{need__}, ___] := Select[all, !FreeQ[#, Alternatives[need]]&]
 
 
-UnAbbr[expr_] := expr //. Join[Subexpr[], Abbr[]]
+UnAbbr[expr_] := expr //. Dispatch[Join[Subexpr[], Abbr[]]]
 
 UnAbbr[expr_, patt_] :=
-  expr //. Select[Join[Subexpr[], Abbr[]], FreeQ[#, patt]&]
+  expr //. Dispatch[Select[Join[Subexpr[], Abbr[]], FreeQ[#, patt]&]]
 
 
 IndexHeader[h_, {}] := h
@@ -4127,6 +4134,8 @@ Block[ {C0i, D0i, E0i, F0i, PaVe},
 
 (* helicity matrix elements *)
 
+ToTrace[fi_ -> plain_, 1] := Mat[fi] -> plain
+
 ToTrace[fi_ -> plain_, fj_ -> conj_] := Mat[fi, fj] ->
   plain (conj /. DiracChain -> ConjChain /. ep_Eps -> -ep /. ConjWF)
 
@@ -4150,6 +4159,9 @@ HelTab[Hel[i_]] := helM[i, e]
 HelTab[h_] := h + e
 
 
+SelectAbbr[abbr_, patt_, plain_, 1, HelicityME] :=
+  abbsq[h] @ abbsel[plain] @ Select[abbr, !FreeQ[#, patt]&]
+
 SelectAbbr[abbr_, patt_, plain_, conj_, h_] := abbsq[h]@@ Through @
   {abbsel[plain], abbsel[conj]} @ Select[abbr, !FreeQ[#, patt]&]
 
@@ -4159,6 +4171,10 @@ abbsel[amp_][abbr_] := Select[abbr, !FreeQ[ amp, #[[1]] ]&]
 
 
 General::nomat = "Warning: No matrix elements to compute."
+
+abbsq[h_][{}] := (Message[h::nomat]; {})
+
+_abbsq[plain_] := {plain, {1}}
 
 abbsq[h_][{}, {}] := (Message[h::nomat]; {})
 
@@ -4666,9 +4682,8 @@ Block[ {drivers, path, files = {}},
     ResetDirectory[]
   ];
 
-  CopyFile[
-    ToFileName[$FormCalcBin, "util.a"],
-    ToFileName[path, "util.a"] ];
+  CopyFile[ToFileName[$FormCalcBin, #], ToFileName[path, #]]&/@
+    {"util.a", "simd.h"};
 
   path
 ]
@@ -5645,7 +5660,7 @@ $(LIB)($(OBJS)): " <> $MakeDeps[[1]] <> MakefileName["vars.h"] <> "\n\n"];
 #undef IDENTICALFACTOR\n\
 #define IDENTICALFACTOR " <>
     ToString[Times@@ (Factorial[Length[#]]&)/@
-      Split[Sort[ First/@ proc[[2]] ]]] <>
+      Split[DeleteCases[First/@ proc[[2]], _Symbol, {-1}]//Sort]] <>
     pdefs[Level[proc, {2}]] <> "\n\n")&@@ ToString/@ Length/@ proc];
 
   Close[hh];

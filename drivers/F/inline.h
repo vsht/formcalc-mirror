@@ -1,14 +1,13 @@
 * inline.h
 * inline util functions and computation of numerators
 * this file is part of FormCalc
-* last modified 14 Jan 16 th
+* last modified 20 Jan 16 th
 
 
 #ifndef INLINE_H
 #define INLINE_H
 
 #define signbit(i) ibits(i,31,1)
-#define IndexDelta(i,j) signbit(ieor(i,j)-1)
 
 #ifdef NINJA
 
@@ -98,7 +97,7 @@ CT2Exp	ComplexType v3in(0:3)
 CT2Exp	ComplexType v4in(0:3)
 CT2Exp	ComplexType para(*)
 
-	integer IndexSign, IndexEps
+	integer IndexDelta, IndexSign, IndexEps
 	RealType Sq, SqDiff, ThreeMom, SInvariant, TInvariant
 	ComplexType Pair0, Eps0, Eps0_
 
@@ -106,7 +105,17 @@ CT2Exp	ComplexType para(*)
 	RealType sqrtS_, ma_, mb_
 	ComplexType z_
 
+	IndexDelta(a_, b_) = merge(1, 0, a_ .eq. b_)
+
+	IndexSign(a_) = signbit(ior(a_, -a_)) - 2*signbit(a_)
+	IndexEps(a_, b_, c_) =
+     &    IndexSign(a_ - b_)*IndexSign(c_ - b_)*IndexSign(a_ - c_)
+
 	Sq(z_) = Re(z_*Conjugate(z_))
+
+	SqDiff(ma_, mb_) = (ma_ - mb_)*(ma_ + mb_)
+	ThreeMom(sqrtS_, ma_, mb_) = sqrt(SqDiff(
+     &    .5D0*(sqrtS_ - SqDiff(ma_, mb_)/sqrtS_), mb_ ))
 
 	SInvariant(a_, b_) =
      &    (Re(vec0(1,1,k0(a_))) + Re(vec0(1,1,k0(b_))))*
@@ -129,14 +138,6 @@ CT2Exp	ComplexType para(*)
      &    Eps0_(a_, b_, c_, d_) + Eps0_(c_, d_, a_, b_) -
      &    Eps0_(a_, c_, b_, d_) - Eps0_(b_, d_, a_, c_) +
      &    Eps0_(a_, d_, b_, c_) + Eps0_(b_, c_, a_, d_) )
-
-	IndexSign(a_) = signbit(ior(a_, -a_)) - 2*signbit(a_)
-	IndexEps(a_, b_, c_) =
-     &    IndexSign(a_ - b_)*IndexSign(c_ - b_)*IndexSign(a_ - c_)
-
-	SqDiff(ma_, mb_) = (ma_ - mb_)*(ma_ + mb_)
-	ThreeMom(sqrtS_, ma_, mb_) = sqrt(SqDiff(
-     &    .5D0*(sqrtS_ - SqDiff(ma_, mb_)/sqrtS_), mb_ ))
 
 CNNum	Vec(1,1,q1) = q1in(0) + q1in(3)
 CNNum	Vec(2,2,q1) = q1in(0) - q1in(3)
