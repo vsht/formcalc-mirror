@@ -1,9 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 27 Oct 15 th
-
-#define DRIVER
+* last modified 14 Jan 16 th
 
 #include "decl.h"
 #include "inline.h"
@@ -52,6 +50,8 @@
 #endif
 #include "hardradiation.F"
 #endif
+
+#include "cuts.F"
 
 
 ************************************************************************
@@ -358,7 +358,7 @@ c	call NinjaFormCalcDebug(1)
 #include "xsection.h"
 
 	integer fail, f, v, c, ndim, ivar
-	integer nshow, nfix, ishow(nvars), ifix(nvars)
+	integer nshow, nfixed, ishow(nvars), ifixed(nvars)
 	RealType xs(NCOMP,2), show(nvars)
 
 #define CPdecl
@@ -472,14 +472,14 @@ c	call NinjaFormCalcDebug(1)
 #endif
 
 	nshow = 0
-	nfix = 0
+	nfixed = 0
 	do v = MINVAR, MAXVAR
 	  if( Step(v) .ne. 0 ) then
 	    nshow = nshow + 1
 	    ishow(nshow) = v
 	    if( Step(v) .ne. -999 ) then
-	      nfix = nfix + 1
-	      ifix(nfix) = v
+	      nfixed = nfixed + 1
+	      ifixed(nfixed) = v
 	      Var(v) = Lower(v)
 	    endif
 	  endif
@@ -534,8 +534,8 @@ c	call NinjaFormCalcDebug(1)
 	call flush(6)
 #endif
 
-	do f = nfix, 1, -1
-	  v = ifix(f)
+	do f = nfixed, 1, -1
+	  v = ifixed(f)
 	  Var(v) = Var(v) + Step(v)
 	  if( (Var(v) - Upper(v))/Step(v) .lt. 1D-10 ) goto 1
 	  Var(v) = Lower(v)
@@ -544,10 +544,6 @@ c	call NinjaFormCalcDebug(1)
 #ifndef MMA
 103	format("|"/"|"/)
 	print 103
-#endif
-
-#if PARALLEL
-	call cubarunexit
 #endif
 
 999	continue
@@ -751,10 +747,13 @@ c	call NinjaFormCalcDebug(1)
 	call Kinematics(fac)
 	if( fac .eq. 0 ) return
 
+	call Cuts(fac)
+	if( fac .eq. 0 ) return
+
 	if( btest(flags, BIT_RESET) ) then
 	  call clearcache
 #ifndef NO_RENCONST
-	  call CalcRenConst
+	  call RenConst
 #endif
 	endif
 
@@ -769,7 +768,7 @@ c	call NinjaFormCalcDebug(1)
 
 #if GLUONRADIATION == SOFT
 	call SoftRadiationFactor(rad, colorcharge(1,pid), weight1)
-	res(2) = res(2) - 1/(2*pi)**2*Alfas*rad*res(1)
+	res(2) = res(2) - 2/(2*pi)**2*Alfas*rad*res(1)
 #endif
 
 #if LEGS_IN == 1
