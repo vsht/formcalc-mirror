@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.2
 Copyright by Thomas Hahn 1996-2016
-last modified 24 Jan 16 by Thomas Hahn
+last modified 28 Jan 16 by Thomas Hahn
 
 Release notes:
 
@@ -1871,7 +1871,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.2
 
-$FormCalcVersion = "FormCalc 9.2 (24 Jan 2016)"
+$FormCalcVersion = "FormCalc 9.2 (28 Jan 2016)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2159,11 +2159,8 @@ DotSimplify[_, f_][expr_] := f[expr]
 
 Attributes[fplus] = {Flat}
 
-splus[n_?Negative, r__] := -fplus@@ (-{n, r})
-
-splus[n_?Negative x_, r__] := -fplus@@ (-{n x, r})
-
-TermCollect[x_] := x /. Plus -> splus /. splus -> fplus //.
+TermCollect[x_] := x /.
+  Plus :> (If[Re[ (4711 #1 _)[[1]] ] < 0, -fplus@@ -{##}, fplus[##]]&) //.
   fplus[a_ b_, a_ c_] :> a fplus[b, c] /. fplus -> Plus //.
   a_ b_ + a_ c_ :> a (b + c)
 
