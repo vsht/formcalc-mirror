@@ -1,3 +1,25 @@
+4 Jun 16:
+
+- Fixed issue with HelNaN, which was not declared in a non-vectorized
+  environment.
+
+
+3 Jun 16:
+
+- Moved FORM procedures common to CalcFeynAmp, HelicityME, 
+  PolarizationSum to Common.frm (with slight adaptations).
+
+- In FormCalc.m accordingsly moved code related to momentum 
+  conservation (including MomElim and DotExpand options) from 
+  CalcFeynAmp, HelicityME, PolarizationSum functions to
+  DeclareProcess.
+
+- Color sums over external particles are now communicated
+  to CalcFeynAmp.frm.  They are still not carried out (so as
+  not to overcount color when squaring the amplitude) but are
+  used to remove terms known to cancel when summed over later.
+
+
 24 May 16:
 
 - FORM + MathLink binaries are now shipped with FormCalc.

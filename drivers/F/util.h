@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 29 Mar 16 th
+* last modified 4 Jun 16 th
 
 
 #ifndef UTIL_H
@@ -22,6 +22,9 @@
 
 #if SIMD > 1
 
+#define SIMD_ONLY(x) x
+#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
+
 #define ResType RealType, dimension(SIMD) ::
 #define HelType ComplexType, dimension(SIMD) ::
 #define HelDim(i) SIMD,i
@@ -29,8 +32,6 @@
 #define HelInd(v,i) v,i
 #define HelLoop(x,y,v,vmax) (x,y, v = 1,vmax)
 #define HelSum(x) sum(x)
-#define SIMD_ONLY(x) x
-#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
 
 #if SIMD == 2
 #define HelNaN(n) n*bogus,n*bogus
@@ -50,6 +51,9 @@
 
 #else
 
+#define SIMD_CEIL(n) n
+#define SIMD_ONLY(x)
+
 #define ResType RealType
 #define HelType ComplexType
 #define HelDim(i) i
@@ -57,10 +61,7 @@
 #define HelInd(v,i) i
 #define HelLoop(x,y,v,vmax) x,y
 #define HelSum(x) x
-
-#define SIMD_CEIL(n) n
-#define SIMD_ONLY(x)
-#define SIMD_MULT(x)
+#define HelNaN(n) n*bogus
 
 #define k k0
 #define s s0
