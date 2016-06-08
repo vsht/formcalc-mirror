@@ -1,3 +1,14 @@
+7 Jun 16:
+
+- Corrected averaging factor for fermions computed with the
+  HelicityME method.
+
+- Added incoming/outgoing information to 'Compose' preprocessor
+  function in specs.h.
+
+- Fixed empty variable declaration in FORM for Invariants -> False.
+
+
 4 Jun 16:
 
 - Fixed issue with HelNaN, which was not declared in a non-vectorized

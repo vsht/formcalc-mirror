@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.4
 Copyright by Thomas Hahn 1996-2016
-last modified 3 Jun 16 by Thomas Hahn
+last modified 7 Jun 16 by Thomas Hahn
 
 Release notes:
 
@@ -1881,7 +1881,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.4
 
-$FormCalcVersion = "FormCalc 9.4 (3 Jun 2016)"
+$FormCalcVersion = "FormCalc 9.4 (7 Jun 2016)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4764,27 +4764,28 @@ InvList[_] = {}
 
 
 pdefs[proc_] :=
-Block[ {qn, fp},
-  qn = (##4&)@@@ proc;
+Block[ {qn, n = 0},
+  qn = (##4&)@@@ Level[proc, {2}];
   qn = Union[Flatten[DeleteCases[qn, _?NumberQ, Infinity]]];
-  fp = MapIndexed[{"f(", ToString@@ #2, ",",
-    FromCharacterCode[#2[[1]] + 64], ")"}&, proc];
   { "\n\n\
 #undef Compose\n\
-#define Compose(f,c", #[[{3, 4}]]&/@ fp, ") ",
-    Fold[{"c(", #1, ",", #2, ")"}&, fp[[1]], Rest[fp]],
+#define Compose(f,c", #1, ") ",
+    Fold[{"c(", #1, ",", #2, ")"}&, #2[[1]], Rest[#2]],
     MapThread[ {"\n\n\
 #undef ", #1, "\n\
 #define ", #1, "(f,c) Compose(f,c", {",", #}&/@ #2, ")"}&,
-      { Flatten[{"Generic", "Anti", "Mass", ToCode/@ qn}],
-        Transpose[pspec/@ proc] }] }
+      {Flatten[{"Generic", "Anti", "Mass", ToCode/@ qn}], {##3}} ]
+  }&@@ Transpose[Level[MapIndexed[pspec, proc, {2}], {2}]]
 ]
 
-pspec[{(s_Integer:1) p_, _, m_, q_:0}] := Flatten[{
+pspec[{(s_Integer:1) p_, _, m_, q_:0}, {o_, _}] := Flatten[{
+  #,
+  "f(" <> ToString[n] <> # <> "," <> ToString[o] <> ")",
   ptype[p, m],
   ToString[s],
   ToCode[m],
-  pqnum[Plus@@ Flatten[{q}]]/@ qn }]
+  pqnum[Plus@@ Flatten[{q}]]/@ qn
+}]&[ "," <> FromCharacterCode[++n + 64] ]
 
 ptype[_V, 0] := "PHOTON";
 ptype[_V, _] := "VECTOR";
@@ -5688,7 +5689,7 @@ $(LIB)($(OBJS)): " <> $MakeDeps[[1]] <> MakefileName["vars.h"] <> "\n\n"];
 #define IDENTICALFACTOR " <>
     ToString[Times@@ (Factorial[Length[#]]&)/@
       Split[DeleteCases[First/@ proc[[2]], _Symbol, {-1}]//Sort]] <>
-    pdefs[Level[proc, {2}]] <> "\n\n")&@@ ToString/@ Length/@ proc];
+    pdefs[proc] <> "\n\n")&@@ ToString/@ Length/@ proc];
 
   Close[hh];
 

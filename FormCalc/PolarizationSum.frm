@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 3 Jun 16 th
+* last modified 7 Jun 16 th
 
 
 #procedure Prepare
@@ -152,10 +152,8 @@ print +s;
 
 #define LoopInt "A0, A00, B0, B1, B00, B11, B001, B111, A0i, B0i, C0i, D0i, E0i, F0i"
 
-cf SumOver, Den, Conjugate, Mat;
-cf `LoopInt';
-s D, Dminus4, Dminus4Eps;
-s `Invariants';
+cf SumOver, Den, Conjugate, Mat, `LoopInt';
+s D, Dminus4, Dminus4Eps, `Invariants';
 
 nt GA;
 f GF;

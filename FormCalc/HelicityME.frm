@@ -1,7 +1,7 @@
 * HelicityME.frm
 * the FORM part of the HelicityME function
 * this file is part of FormCalc
-* last modified 3 Jun 16 th
+* last modified 7 Jun 16 th
 
 
 #procedure Emit
@@ -116,8 +116,7 @@ print;
 ***********************************************************************
 
 cf DiracChain, Mat;
-s D, Dminus4, Dminus4Eps;
-s `Invariants';
+s D, Dminus4, Dminus4Eps, `Invariants';
 
 i KK;
 t DD, Pol;
