@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.4
 Copyright by Thomas Hahn 1996-2016
-last modified 7 Jun 16 by Thomas Hahn
+last modified 8 Jun 16 by Thomas Hahn
 
 Release notes:
 
@@ -2671,7 +2671,7 @@ invproc = {}, invs = {}, kikj = {}, eiki = {}, eiei = {}},
 
   If[ norm, eiei = KinFunc[e.ec -> -1]@@@ kins ];
 
-  Switch[ Legs,
+  Switch[ Length[masses],
     0 | 1,
       Null,
     2,
@@ -2713,7 +2713,7 @@ invproc = {}, invs = {}, kikj = {}, eiki = {}, eiei = {}},
           -signs[[#]] Plus@@ Drop[n, {#}], "\"\n"}&, Legs]};
   ];
 
-  kikj = Cases[DownValues[dot], _[_[_[k__]], v_] :> Dot[k] -> v];
+  kikj = ReleaseHold[DownValues[dot] /. dot -> Dot];
   FormSymbols = Flatten[{FormSymbols, Last/@ kikj}];
 
   momrange = Range[Legs];
@@ -4781,17 +4781,18 @@ Block[ {qn, n = 0},
 pspec[{(s_Integer:1) p_, _, m_, q_:0}, {o_, _}] := Flatten[{
   #,
   "f(" <> ToString[n] <> # <> "," <> ToString[o] <> ")",
-  ptype[p, m],
+  ptype[p, m, Hel[n]],
   ToString[s],
   ToCode[m],
   pqnum[Plus@@ Flatten[{q}]]/@ qn
 }]&[ "," <> FromCharacterCode[++n + 64] ]
 
-ptype[_V, 0] := "PHOTON";
-ptype[_V, _] := "VECTOR";
-ptype[_F, _] := "FERMION";
-ptype[_S, _] := "SCALAR";
-ptype[_U, _] := "GHOST"
+ptype[_V, 0, _] := "PHOTON";
+ptype[_V, __] := "VECTOR";
+ptype[_F, _, 0] := "UFERMION";
+ptype[_F, __] := "FERMION";
+ptype[_S, __] := "SCALAR";
+ptype[_U, __] := "GHOST"
 
 pqnum[expr_][qn_] := ToCode[Coefficient[expr, qn]]
 
