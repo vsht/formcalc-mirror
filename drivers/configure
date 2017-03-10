@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 4 Feb 16 th
+# last modified 12 Sep 16 th
 
 
 exec 2> ${LOGFILE:-/dev/null} 3>&1
@@ -481,7 +481,8 @@ _EOF_
 eval ${LOGFILE:+cat $test.f 1>&2}
 for CONF_LIBCPP in "" -lstdc++ -lc++ $CONF_CPPLIBS ; do
   $CONF_FC $CONF_FFLAGS -o $test $test.f $LIBS $CONF_STDLIBS $CONF_LIBCPP 1>&2 && {
-    CONF_LIBS="$CONF_LIBCPP${CONF_LIBS:+ $CONF_LIBS}"
+#    CONF_LIBS="$CONF_LIBCPP${CONF_LIBS:+ $CONF_LIBS}"
+    CONF_LIBS="${CONF_LIBS:+$CONF_LIBS }$CONF_LIBCPP"
     break
   }
   CONF_LIBCPP=FAILED

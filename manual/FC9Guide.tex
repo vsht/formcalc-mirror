@@ -480,10 +480,6 @@ applying \Code{Plus} to the outcome of \Code{CalcFeynAmp}, \ie
 \Code{Dimension} & \Code{D} &
 	the space-time dimension in which the calculation is performed
 	(\Code{D}, \Code{4}, or \Code{0}) \\
-\Code{MomElim} & \Code{Automatic} &
-	how to apply momentum conservation \\
-\Code{DotExpand} & \Code{False} &
-	whether to expand terms collected for momentum elimination \\
 \Code{NoCostly} & \Code{False} &
 	whether to turn off potentially time-consuming simplifications
 	in FORM \\
@@ -496,14 +492,14 @@ applying \Code{Plus} to the outcome of \Code{CalcFeynAmp}, \ie
 	whether to keep track of fermionic operators across Fierz
 	transformations \\
 \Code{InsertionPolicy} & \Code{Default} &
-	how the level insertions are processed
-\etab
-
-\biiitab{option}
+	how the level insertions are processed \\
 \Code{SortDen} & \Code{True} &
 	whether to sort the denominators of the loop integrals \\
 \Code{PaVeReduce} & \Code{False} &
-	whether to reduce tensor to scalar integrals \\
+	whether to analytically reduce tensor to scalar integrals
+\etab
+
+\biiitab{option}
 \Code{SimplifyQ2} & \Code{True} &
 	whether to simplify $q^2$ in the numerator \\
 \Code{OPP} & \Code{100} &
@@ -540,8 +536,6 @@ applying \Code{Plus} to the outcome of \Code{CalcFeynAmp}, \ie
 \etab%
 \indextt{CalcLevel}%
 \indextt{Dimension}%
-\indextt{MomElim}%
-\indextt{DotExpand}%
 \indextt{NoCostly}%
 \indextt{FermionChains}%
 \indextt{FermionOrder}%
@@ -617,19 +611,6 @@ discussion see \cite{HaP98}.
 	through \Code{Dminus4}.
 \end{itemize}%
 \indextt{Dminus4}
-
-\index{momentum conservation}%
-\index{cancellation of terms}%
-\Code{MomElim} controls in which way momentum conservation is used to
-eliminate momenta.  \Code{False} performs no elimination, an integer
-between 1 and the number of legs eliminates the specified momentum in
-favour of the others, and \Code{Automatic} tries all substitutions and
-chooses the one resulting in the fewest terms.
-
-\Code{DotExpand} determines whether the terms collected for momentum 
-elimination are expanded again.  This prevents kinematical invariants
-from appearing in the abbreviations but typically leads to poorer
-simplification of the amplitude.
 
 \Code{NoCostly} switches off simplifications in the FORM code which are 
 typically fast but can cause `endless' computations on certain 
@@ -835,10 +816,13 @@ meaning please see the header of \Code{ReadForm.tm}.
 \Code{CalcFeynAmp} wraps the above functions around various parts of the 
 FORM output for simplification upon return to Mathematica.  These are 
 typically relatively short expressions which can be simplified efficiently 
-in Mathematica.  The default settings try to balance execution time against 
-simplification efficiency.  Occasionally, though, Mathematica will spend 
-excessive time on simplification and in this case one or several of the 
-above should be redefined, \eg set to \Code{Identity}.
+in Mathematica.  The default settings try to balance execution time 
+against simplification efficiency.  Occasionally, though, Mathematica 
+will spend excessive time on simplification and in this case one or 
+several of the above should be redefined, \eg set to \Code{Identity}.  
+Alternately, one can use \FC's \Code{Profile} function to narrow down
+performance problems, as in: \Code{FormMat = Profile[FormMat]}.%
+\indextt{Profile}
 
 
 \subsection{\Code{DeclareProcess}}
@@ -895,14 +879,20 @@ they are not \Code{CalcFeynAmp} options.
 \Code{InvSimplify} & \Code{True} &
 	whether to simplify combinations of invariants as much as
 	possible \\
+\Code{MomElim} & \Code{Automatic} &
+	how to apply momentum conservation \\
+\Code{DotExpand} & \Code{False} &
+	whether to expand terms collected for momentum elimination \\
 \Code{Antisymmetrize} & \Code{True} &
-	whether Dirac chains are antisymmetrized
+	whether Dirac chains shall be antisymmetrized
 \etab%
 \indextt{OnShell}%
 \indextt{Invariants}%
 \indextt{Transverse}%
 \indextt{Normalized}%
 \indextt{InvSimplify}%
+\indextt{MomElim}%
+\indextt{DotExpand}%
 \indextt{Antisymmetrize}%
 
 \index{mass shell}%
@@ -949,14 +939,26 @@ Option & Action \\ \hline
 \Code{InvSimplify} controls whether \Code{CalcFeynAmp} should try to 
 simplify combinations of invariants as much as possible.
 
+\index{momentum conservation}%
+\index{cancellation of terms}%
+\Code{MomElim} controls in which way momentum conservation is used to
+eliminate momenta.  \Code{False} performs no elimination, an integer
+between 1 and the number of legs eliminates the specified momentum, and 
+\Code{Automatic} tries all substitutions and chooses the one resulting 
+in the fewest terms.
+
+\Code{DotExpand} determines whether the terms collected for momentum 
+elimination are expanded again.  This prevents kinematical invariants
+from appearing in the abbreviations but typically leads to poorer
+simplification of the amplitude.
+
 \index{antisymmetrization}%
-\Code{Antisymmetrize} determines whether Dirac chains are antisymmetrized.
-Note that this does not affect Weyl chains, \ie has an effect only if
-\Code{FermionChains\,->\,Chiral} or \Code{VA} is chosen in
-\Code{CalcFeynAmp}.  Take care that antisymmetrized and non-antisymmetrized
-Dirac chains have an indistinguishable notation.  Needless to say, one
-should not change the antisymmetrization flag between \Code{CalcFeynAmp}
-and \Code{HelicityME}.
+\Code{Antisymmetrize} determines whether to antisymmetrize Dirac chains.  
+This does not affect Weyl chains, \ie has an effect only together with
+\Code{FermionChains\,->\,Chiral} or \Code{VA}.  Antisymmetrized chains
+carry a negative chirality identifier, \eg 
+\Code{DiracChain[-6,\,$\mu$,\,$\nu$]} stands for
+$P_R\,\frac 12 (\gamma_\mu\gamma_\nu - \gamma_\nu\gamma_\mu)$.
 
 %------------------------------------------------------------------------
 
