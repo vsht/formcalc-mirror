@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.5
 Copyright by Thomas Hahn 1996-2017
-last modified 8 Mar 17 by Thomas Hahn
+last modified 10 Mar 17 by Thomas Hahn
 
 Release notes:
 
@@ -754,9 +754,9 @@ specifies that sums containing any of sym1, sym2, ... are not expanded
 during the FORM calculation."
 
 NoBracket::usage =
-"NoBracket is an option of CalcFeynAmp.  NoBracket -> {sym1, sym2, ...} 
-specifies that sym1, sym2, ... are not collected inside a multiplication 
-bracket during the FORM calculation."
+"NoBracket is an option of CalcFeynAmp and PolarizationSum. 
+NoBracket -> {sym1, sym2, ...} specifies that sym1, sym2, ... are not
+collected inside a multiplication bracket during the FORM calculation."
 
 MomRules::usage =
 "MomRules is an option of CalcFeynAmp.  It specifies a set of rules
@@ -1067,17 +1067,30 @@ DenCollect::usage =
 identical up to a numerical constant.  DenCollect[expr, wrap] applies
 wrap to the collected numerators."
 
-MapOnly::usage =
-"MapOnly[h, syms][f, expr] maps f onto subexpressions of head h in expr
-which must contain one each of all items in syms and no other symbols. 
-For example, MapOnly[h, a1|a2, b][f, expr] maps f onto all
-subexpressions which contain b and a1 or a2 and no other symbols."
-
 Pool::usage =
 "Pool[expr] combines terms with common factors.  Unlike Factor, it looks
 at the terms pairwise and can thus do a b + a c + d -> a (b + c) + d
-fast.  Unlike Simplify, it does not modify b and c.  Pool[expr, wrap]
-applies wrap to the (b + c) part."
+fast.  Unlike Simplify, it does not modify b and c. 
+Pool[expr, wrap] applies wrap to the (b + c) part."
+
+MapOnly::usage =
+"MapOnly[f, h, patt][expr] maps f onto subexpressions of head h in expr
+which must contain each of the items in patt and no symbols other than
+the ones appearing in patt.
+For example, MapOnly[f, h, a1|a2, b][expr] maps f onto all
+h-subexpressions which contain b and a1 or a2 and no other symbols."
+
+Creep::usage =
+"Creep[f, patt][expr] applies f to subexpressions of expr which contain
+only the patterns in patt."
+
+OnSize::usage =
+"OnSize[n1, f1, n2, f2, ..., fdef][expr] returns f1[expr] if
+LeafCount[expr] < n1, f2[expr] if LeafCount[expr] < n2, etc., and
+fdef[expr] if the expression is still larger.  fdef can take the
+special value Map which means that fdef[expr] recursively applies
+the entire OnSize function to the parts of expr.  If omitted, fdef
+defaults to Identity."
 
 ApplyUnitarity::usage =
 "ApplyUnitarity[expr, mat, d, (wrap)] simplifies expr by exploiting the
@@ -1101,18 +1114,6 @@ If it returns True, sums of the form
   Usq[a][1, i,j] := U[i,a1] U^*[j,a1] + ... + U[i,aN] U^*[j,aN] and
   Usq[a][2, i,j] := U[a1,i] U^*[a1,j] + ... + U[aN,i] U^*[aN,j]
 are replaced by KroneckerDelta[i, j] - Usq[Ca][x, i,j]."
-
-Creep::usage =
-"Creep[f, objs][expr] applies f to subexpressions of expr which contain
-only the patterns in objs."
-
-OnSize::usage =
-"OnSize[n1, f1, n2, f2, ..., fdef][expr] returns f1[expr] if
-LeafCount[expr] < n1, f2[expr] if LeafCount[expr] < n2, etc., and
-fdef[expr] if the expression is still larger.  fdef can take the
-special value Map which means that fdef[expr] recursively applies
-the entire OnSize function to the parts of expr.  If omitted, fdef
-defaults to Identity."
 
 OffShell::usage =
 "OffShell[amps, i -> mi, ...] returns the FeynAmpList amps with the
@@ -1983,7 +1984,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.5
 
-$FormCalcVersion = "FormCalc 9.5 (8 Mar 2017)"
+$FormCalcVersion = "FormCalc 9.5 (10 Mar 2017)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2288,12 +2289,25 @@ ToCat[_, li_] := Flatten/@ Transpose[li]
 Symbols[expr_] := Union[Cases[expr, _Symbol, {-1}]]
 
 
-only[h_, f_, s_][t___] := Catch[
+otest[f_, h_, s_][t___] := Catch[
   Scan[ If[FreeQ[{t}, #], Throw[h[t]]]&, s ];
-  If[ Complement[Symbols[{t}], Symbols[s]] =!= {}, Throw[h[t]] ];
   f[h[t]] ]
 
-MapOnly[h_, s__][f_, expr_] := expr /. h -> only[h, f, {s}]
+omap[f_, sym_][sym_, expr_] := f[expr]
+
+_omap[_, expr_] := expr
+
+MapOnly[f_, h_, s__][expr_] :=
+  expr /. h -> otest[omap[f, Symbols[{s}]], h, {s}]
+
+
+Creep[f_, patt_, p__] := Creep[f, patt | p]
+
+Creep[_, patt_][expr_] := expr /; FreeQ[expr, patt]
+
+Creep[f_, patt_][expr_] := f[expr] /; NumberQ[expr /. patt :> Random[]]
+
+c_Creep[expr_] := c/@ expr
 
 
 FromPlus[h_, p_Plus] := h@@ p
@@ -2442,14 +2456,6 @@ Block[ {rows, cols, comp, ux, uexpr},
     usq[a__][1, i_, k_] :> Plus@@ (U[i, #] Conjugate[U[k, #]] &)/@ {a},
     usq[a__][2, i_, k_] :> Plus@@ (U[#, i] Conjugate[U[#, k]] &)/@ {a} }
 ]
-
-
-Creep[_, obj__][expr_] := expr /; FreeQ[expr, Alternatives[obj]]
-
-Creep[f_, objs__][expr_] := f[expr] /;
-  NumberQ[expr /. Alternatives[objs] :> Random[]]
-
-c_Creep[expr_] := c/@ expr
 
 
 Attributes[osfun] = {HoldAll}
@@ -3804,9 +3810,9 @@ abbsel[{need__}, {omit__}] := Select[all,
 abbsel[{need__}, ___] := Select[all, !FreeQ[#, Alternatives[need]]&]
 
 
-UnAbbr[expr_] := expr //. Dispatch[Join[Subexpr[], Abbr[]]]
+Unabbr[expr_] := expr //. Dispatch[Join[Subexpr[], Abbr[]]]
 
-UnAbbr[expr_, patt_] :=
+Unabbr[expr_, patt_] :=
   expr //. Dispatch[Select[Join[Subexpr[], Abbr[]], FreeQ[#, patt]&]]
 
 
@@ -4374,42 +4380,7 @@ Block[ {C0i, D0i, E0i, F0i, PaVe},
 ]
 
 
-(* helicity matrix elements *)
-
-ConjF[f_ -> expr_, {1, _}] := f[ToString[f] -> expr]
-
-ConjF[f_ -> expr_, {2, _}] := f[ToString[f] <> "C" ->
-  expr /. DiracChain -> ConjChain /. ep_Eps :> -ep /. ConjWF]
-
-
-ConjChain[s1_Spinor, om_Integer, g___, s2_Spinor] :=
-  (#1 Reverse[DiracChain[s1, g, #2, s2]])&@@
-     ConjOm[EvenQ[Length[{g}]], om]
-
-ConjOm[False, om_] := {1, om};
-ConjOm[_, 6] = {1, 7};
-ConjOm[_, -6] = {1, -7};
-ConjOm[_, 7] = {1, 6};
-ConjOm[_, -7] = {1, -6};
-ConjOm[_, 5] = {-1, 5};
-ConjOm[_, -5] = {-1, -5};
-ConjOm[_, 1] = {1, 1}
-ConjOm[_, -1] = {1, -1}
-
-
-FormLor[n_] := FormLor[n] = "N" <> ToString[n] <> "_?"
-
-
-HelicitySq[f_[s_ -> _], 1] := Mat[f][ToStr["Mat", f] -> s]
-
-HelicitySq[f_[s_ -> _], fc_[sc_ -> _]] :=
-  Mat[f, fc][ToStr["Mat", f, fc] -> s <> "*" <> sc]
-
-
-HelTab[Hel[i_]] := helM[i, e]
-
-HelTab[h_] := h + e
-
+(* matrix elements *)
 
 SelectAbbr[HelicityME][abbr_, patt_, loop_, 1] :=
   abbsq[HelicityME] @ inamp[loop] @ Select[abbr, !FreeQ[#, patt]&]
@@ -4436,6 +4407,41 @@ _abbsq[loop_, {}] := {loop, loop}
 
 abbsq[_][amp__] :=
   Thread[If[{$TreeSquare, $LoopSquare}, Hold[amp], {amp}]] /. Hold -> Union
+
+
+ConjF[f_ -> expr_, {1, _}] := f[ToString[f] -> expr]
+
+ConjF[f_ -> expr_, {2, _}] := f[ToString[f] <> "C" ->
+  expr /. DiracChain -> ConjChain /. ep_Eps :> -ep /. ConjWF]
+
+
+ConjChain[s1_Spinor, om_Integer, g___, s2_Spinor] :=
+  (#1 Reverse[DiracChain[s1, g, #2, s2]])&@@
+     ConjOm[EvenQ[Length[{g}]], om]
+
+ConjOm[False, om_] := {1, om};
+ConjOm[_, 6] = {1, 7};
+ConjOm[_, -6] = {1, -7};
+ConjOm[_, 7] = {1, 6};
+ConjOm[_, -7] = {1, -6};
+ConjOm[_, 5] = {-1, 5};
+ConjOm[_, -5] = {-1, -5};
+ConjOm[_, 1] = {1, 1};
+ConjOm[_, -1] = {1, -1}
+
+
+FormLor[n_] := FormLor[n] = "N" <> ToString[n] <> "_?"
+
+
+HelicitySq[f_[s_ -> _], 1] := Mat[f][ToStr["Mat", f] -> s]
+
+HelicitySq[f_[s_ -> _], fc_[sc_ -> _]] :=
+  Mat[f, fc][ToStr["Mat", f, fc] -> s <> "*" <> sc]
+
+
+HelTab[Hel[i_]] := helM[i, e]
+
+HelTab[h_] := h + e
 
 
 Rep[Spinor[k[i_], _, s_, 2, _]] :=
@@ -4471,11 +4477,9 @@ HelicityME[tree_, opt___?OptionQ] := HelicityME[tree, tree, opt]
 HelicityME[tree_, loop_, opt___?OptionQ] :=
 Block[ {dim, edit, retain,
 abbr, part, vars, hels, helM, hh, e, mat},
-
   If[ CurrentProc === {},
     Message[HelicityME::noprocess];
     Abort[] ];
-
   {$TreeSquare, $LoopSquare, dim, edit, retain} =
      ParseOpt[HelicityME, opt] /. Options[CalcFeynAmp];
 
@@ -4492,7 +4496,7 @@ abbr, part, vars, hels, helM, hh, e, mat},
     Reverse/@ FromFormRules /. Eps -> "e_" /.
     FinalFormRules;
 
-  mat = Flatten[Outer[HelicitySq, Sequence@@ abbr]];
+  mat = Outer[HelicitySq, Sequence@@ abbr] //Flatten;
 
   FCPrint[1, "> ", Length[mat], " helicity matrix elements"];
 
@@ -4531,6 +4535,10 @@ table HEL(" <> ToString[Min[part]] <> ":" <>
 ]
 
 
+WeylSq[fac_][f_ -> s_, fc_ -> sc_] :=
+  Mat[f, fc] -> f Conjugate[fc] fac[s, sc]
+
+
 Options[WeylME] = {
   TreeSquare :> $TreeSquare,
   LoopSquare :> $LoopSquare,
@@ -4541,7 +4549,7 @@ WeylME::weyl = "Warning: WeylME does not work on DiracChains."
 
 WeylME[tree_, opt___?OptionQ] := WeylME[tree, tree, opt]
 
-WeylME[tree:Amp[_][___], loop:Amp[_][___], opt___?OptionQ] :=
+WeylME[tree_, loop_, opt___?OptionQ] :=
 Block[ {fac, abbr},
   ChkProc[{tree, loop}, WeylME];
 
@@ -4549,14 +4557,11 @@ Block[ {fac, abbr},
 
   abbr = Abbr[];
   If[ !FreeQ[abbr, DiracChain], Message[WeylME::dirac] ];
-
   abbr = Check[
     SelectAbbr[WeylME][abbr, WeylChain[_Spinor, ___], loop, tree],
     Return[{}] ];
 
-  Level[
-    {{Mat[##] -> #1 Conjugate[#2] fac[##] &}, Map[First, abbr, {2}]},
-    {2}, Outer ] //Flatten
+  Outer[WeylSq[fac], Sequence@@ abbr] //Flatten
 ]
 
 
@@ -4660,8 +4665,7 @@ ColourGrouping[tops_] := DiagramGrouping[ tops,
     _?NumberQ r_ :> r]& ]
 
 
-ColourSq[f_ -> x_, fc_ -> xc_] :=
-  Mat[f, fc] -> ColourSimplify[x, xc]
+ColourSq[f_ -> x_, fc_ -> xc_] := Mat[f, fc] -> ColourSimplify[x, xc]
 
 
 Options[ColourME] = {
@@ -4674,9 +4678,11 @@ ColourME[tree_, opt___?OptionQ] := ColourME[tree, tree, opt]
 ColourME[tree_, loop_, opt___?OptionQ] :=
 Block[ {abbr},
   {$TreeSquare, $LoopSquare} = ParseOpt[ColourME, opt];
+
   abbr = Check[
     SelectAbbr[ColourME][Abbr[], SUNObjs, loop, tree],
     Return[{}] ];
+
   Outer[ColourSq, Sequence@@ abbr] //Flatten
 ]
 

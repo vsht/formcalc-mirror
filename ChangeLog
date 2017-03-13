@@ -8,7 +8,7 @@
 
 23 Feb 17:
 
-- Fixed up another bug from returning Abbr/Subexpr with patterns
+- Fixed another bug from returning Abbr/Subexpr with patterns
   in issuing debug statements.
 
 
@@ -91,7 +91,7 @@
 - Moved FORM procedures common to CalcFeynAmp, HelicityME, 
   PolarizationSum to Common.frm (with slight adaptations).
 
-- In FormCalc.m accordingsly moved code related to momentum 
+- In FormCalc.m accordingly moved code related to momentum 
   conservation (including MomElim and DotExpand options) from 
   CalcFeynAmp, HelicityME, PolarizationSum functions to
   DeclareProcess.
