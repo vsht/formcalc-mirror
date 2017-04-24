@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.5
 Copyright by Thomas Hahn 1996-2017
-last modified 10 Mar 17 by Thomas Hahn
+last modified 13 Apr 17 by Thomas Hahn
 
 Release notes:
 
@@ -1984,7 +1984,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.5
 
-$FormCalcVersion = "FormCalc 9.5 (10 Mar 2017)"
+$FormCalcVersion = "FormCalc 9.5 (13 Apr 2017)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -5594,9 +5594,9 @@ MatType[0, h_[j_]] := Conjugate[MatSym[h][j, 0]]
 MatSym[h_] := MatSym[h] = ToSymbol["Mat", h]
 
 
-defMat[m_[imin_ ;; imax_ | imax_, jmin_ ;; jmax_ | jmax_]] := (
+defMat[mat:(m_[imin_ ;; imax_ | imax_, jmin_ ;; jmax_ | jmax_])] := (
   matsel[_[m[i_, j_], _]] := imin <= i <= imax && jmin <= j <= jmax;
-  matsub[_m, _] := (matsub[_m, _] =.; m[imax, jmax]) )
+  matsub[_m, _] := (matsub[_m, _] =.; mat) )
 
 defTree[m_[imin_ ;; imax_ | imax_, jmin_ ;; jmax_ | jmax_]] :=
   defcat[r:_[m[i_, j_], _]] := {r, {}, {}} /;
@@ -5635,6 +5635,10 @@ Cond[True, args__] := {args}
 
 Cond[False, __] = {}
 
+
+Attributes[helDim] =
+Attributes[helDimF] =
+Attributes[helDimC] = {HoldFirst}
 
 helDimF[h_[i_, j___], ___] :=
   (Sow[h[a_, b___] :> h[HelAll[a], b]]; h[HelDim[i], j])
@@ -5866,13 +5870,13 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
   defs = Map[Select[#, MemberQ[abrs, First[#]]&]&, defs, {2}];
 
   {com, helrul} = Reap[helDim[Hel[1]]; VarDecl[
-    { Common["varXs"][#1[[1]], "ComplexType",
-                      #1[[2]], "ComplexType"],
-      Common["varXa"][#2[[1]], "ComplexType",
-                      #2[[2]], "ComplexType",
+    { Common["varXs"][defs[[1,1]], "ComplexType",
+                      defs[[1,2]], "ComplexType"],
+      Common["varXa"][defs[[2,1]], "ComplexType",
+                      defs[[2,2]], "ComplexType",
                       invs, "RealType"],
-      Common["varXh"][helDim@@@ #3[[1]], helType,
-                      helDim@@@ #3[[2]], helType] }&@@ defs,
+      Common["varXh"][helDim@@@ defs[[3,1]], helType,
+                      helDim@@@ defs[[3,2]], helType] },
     Common["indices"][DimInd[], "integer"],
     Common["formfactors"][
       helDim/@ Join[ ff[[1]], mats[[1]] ], helType,
@@ -7039,7 +7043,7 @@ SetLanguage["Fortran"] = (
 
 SetLanguage[lang_, "novec"] := (
   SetLanguage[lang];
-  helDim = #1&;
+  helDim = #1 &;
   helType = "ComplexType";
   resType = "RealType";
   vxCode[_, s___] := s;
@@ -7161,6 +7165,8 @@ Block[ {tmps, new},
     Union[Cases[expr /. {_DoLoop -> 1, _IndexIf -> 1},
       p_Plus /; LeafCount[N[p]] > minleaf, {lev}]];
   new = Block[{Plus}, Apply[Set, tmps, {2}]; expr];
+Print[new];
+Interrupt[];
   new = #1 /. Flatten[#2] & @@
     Reap[new /. r:(_dup -> _dup) :> (Sow[r]; {})];
   Fold[insdef, new, Reverse[tmps]] //Flatten
@@ -7439,9 +7445,9 @@ var, decl, block = 0},
     p_Plus :> (HornerForm[p] /. HornerForm -> Identity) /; Depth[p] < 6} ];
   fcoll = If[ TrueQ[fcoll], TermCollect, Identity ];
   _var = {};
-  VarType[vars, type];
-  VarType[tmpvars, tmptype /. Type -> type];
-  VarType[Union[DoIndex/@
+  varType[vars, type];
+  varType[tmpvars, tmptype /. Type -> type];
+  varType[Union[DoIndex/@
     Cases[expr, DoLoop[_, i__] :> i, Infinity]], indtype];
   _var =.;
   decl = VarDecl[ Flatten[#2], #1[[1,1]] ]&@@@ DownValues[var];
@@ -7454,18 +7460,18 @@ WriteExpr[hh_, expr_, opt___Rule] := WriteExpr[hh,
   FilterOpt[WriteExpr, opt]]
 
 
-VarType[_, False] = 0
+varType[_, False] = 0
 
-VarType[v:{__}, s:_String | {__String}] := var[s] = {var[s], v}
+varType[v:{__}, s:_String | {__String}] := var[s] = {var[s], v}
 
-VarType[v_List, r:_Rule | {__Rule}] :=
-  MapThread[VarSet, {v, Replace[v, r, {1}]}]
+varType[v_List, r:_Rule | {__Rule}] :=
+  MapThread[varSet, {v, Replace[v, r, {1}]}]
 
-VarType[v_List, f_] := MapThread[VarSet, {v, f/@ v}]
+varType[v_List, f_] := MapThread[varSet, {v, f/@ v}]
 
-VarSet[v_, v_] = 0
+varSet[v_, v_] = 0
 
-VarSet[v_, s:_String | {__String}] := var[s] = {var[s], v}
+varSet[v_, s:_String | {__String}] := var[s] = {var[s], v}
 
 
 $DebugPre[1, level_:4] := "#if DEBUG >= " <> ToString[level] <> "\n"
