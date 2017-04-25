@@ -7165,8 +7165,6 @@ Block[ {tmps, new},
     Union[Cases[expr /. {_DoLoop -> 1, _IndexIf -> 1},
       p_Plus /; LeafCount[N[p]] > minleaf, {lev}]];
   new = Block[{Plus}, Apply[Set, tmps, {2}]; expr];
-Print[new];
-Interrupt[];
   new = #1 /. Flatten[#2] & @@
     Reap[new /. r:(_dup -> _dup) :> (Sow[r]; {})];
   Fold[insdef, new, Reverse[tmps]] //Flatten
