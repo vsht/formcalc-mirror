@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.5
 Copyright by Thomas Hahn 1996-2017
-last modified 13 Apr 17 by Thomas Hahn
+last modified 7 Jun 17 by Thomas Hahn
 
 Release notes:
 
@@ -1984,7 +1984,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.5
 
-$FormCalcVersion = "FormCalc 9.5 (13 Apr 2017)"
+$FormCalcVersion = "FormCalc 9.5 (7 Jun 2017)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4708,8 +4708,9 @@ squaredME[0, _] = squaredME[_, 0] = 0
 
 squaredME[tree_, loop_] :=
 Block[ {ffdef = {}, ff, ffc},
-  {ff, ffc} = (matFF[#1]/@ ToList[Collect[#2, _Mat, FF]])&@@@
-    {FF -> loop, FFC -> UniqIndices[tree, loop]};
+  {ff, ffc} = (#1/@ ToList[Collect[#2, _Mat, FF]])&@@@ {
+    matFF[FF, Identity] -> loop,
+    matFF[FFC, Conjugate] -> UniqIndices[tree, loop] };
   { TermCollect[Plus@@ (FF[#] Plus@@ matSq[#]/@ ffc &)/@ ff],
     Flatten[ffdef] }
 ]
@@ -4719,9 +4720,9 @@ matSq[m_Symbol][mc_] := FFC[mc] Mat[m, mc]
 matSq[m_][mc_] := FFC[mc] Inner[Mat, m, mc, Times]
 
 
-matFF[h_][FF[f_] Mat[m_]] := (ffdef = {ffdef, h[m] -> f}; m)
+matFF[h_, c_][FF[f_] Mat[m_]] := (ffdef = {ffdef, h[m] -> c[f]}; m)
 
-matFF[h_][other_] := (ffdef = {ffdef, h[1] -> other}; 1)
+matFF[h_, c_][other_] := (ffdef = {ffdef, h[1] -> c[other]}; 1)
 
 
 Unprotect[Conjugate]
@@ -4729,8 +4730,7 @@ Unprotect[Conjugate]
 Format[ Conjugate[x_] ] := Superscript[x, "*"]
 
 (*
-Format[ Conjugate[t_Times] ] :=
-  Superscript[SequenceForm["(", t, ")"], "*"]
+Format[ Conjugate[t_Times] ] := Superscript[SequenceForm["(", t, ")"], "*"]
 *)
 
 Conjugate[D] = D
@@ -4849,9 +4849,10 @@ mainexpr, rul},
   {slegs, dim, gauge, nobrk, edit, retain} =
     ParseOpt[PolarizationSum, opt] /. Options[CalcFeynAmp];
 
-  fexpr = Flatten[{expr}] /. (h:FF | FFC | Mat)[a__] :>
-    StringJoin[ToString/@ Level[{h, a}, {-1}]];
-  fexpr = UnAbbr[fexpr] /. FinalFormRules;
+  fexpr = Flatten[{expr}] /. h:(FF | FFC | Mat)[__] :>
+    StringReplace[ToString[h, CForm],
+      {"(" -> "o", "*" -> "x", ")" -> ""}];
+  fexpr = Unabbr[fexpr] /. FinalFormRules;
   lor = Cases[fexpr, _Lor, Infinity] //Union;
   indices = FormIndices[[ Level[lor, {2}] ]];
   fexpr = fexpr /. Thread[lor -> indices];
