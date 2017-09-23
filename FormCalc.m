@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.5
 Copyright by Thomas Hahn 1996-2017
-last modified 7 Jun 17 by Thomas Hahn
+last modified 22 Sep 17 by Thomas Hahn
 
 Release notes:
 
@@ -1984,7 +1984,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.5
 
-$FormCalcVersion = "FormCalc 9.5 (7 Jun 2017)"
+$FormCalcVersion = "FormCalc 9.5 (22 Sep 2017)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4850,8 +4850,7 @@ mainexpr, rul},
     ParseOpt[PolarizationSum, opt] /. Options[CalcFeynAmp];
 
   fexpr = Flatten[{expr}] /. h:(FF | FFC | Mat)[__] :>
-    StringReplace[ToString[h, CForm],
-      {"(" -> "o", "*" -> "x", ")" -> ""}];
+    "\\[" <> ToString[h, CForm] <> "\\]";
   fexpr = Unabbr[fexpr] /. FinalFormRules;
   lor = Cases[fexpr, _Lor, Infinity] //Union;
   indices = FormIndices[[ Level[lor, {2}] ]];
