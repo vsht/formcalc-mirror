@@ -130,6 +130,7 @@
 \def\Brac#1{\lbrac#1\rbrac}
 \def\uscore{\symbol{95}}
 \def\backsl{\symbol{92}}
+\def\pipe{\symbol{124}}
 \def\home{\symbol{126}}
 \def\power{\symbol{94}}
 \def\ri{\mathrm{i}}
@@ -169,7 +170,7 @@
 
 \vspace*{1ex}
 
-\hfill\hbox{Jan 8, 2018~~~~~Thomas Hahn}
+\hfill\hbox{Feb 12, 2018~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -5321,6 +5322,8 @@ symbols in the generated code to avoid symbol collisions.
 	statements \\
 \Code{MakeTmp} & \Code{Identity} &
 	a function for introducing user-defined temporary variables \\
+\Code{Declarations} & \rlap{\Code{(Rule\,\pipe\,RuleAdd)[\Vv\uscore,\,\uscore] :> \Vv}} \\
+&&	a \Code{Cases} pattern for selecting variable declarations \\
 \Code{FinalTouch} & \Code{Identity} &
 	a function which is applied to the final subexpressions \\
 \Code{ResetNumbering} & \Code{True} &
@@ -5333,6 +5336,7 @@ symbols in the generated code to avoid symbol collisions.
 \indextt{DebugLines}%
 \indextt{DebugLabel}%
 \indextt{MakeTmp}%
+\indextt{Declarations}%
 \indextt{FinalTouch}%
 \indextt{ResetNumbering}
 
@@ -5405,6 +5409,9 @@ variable \Code{DEBUG} (debug level) is larger than 2.
 
 \Code{MakeTmp} specifies a function for introducing user-defined 
 temporary variables, \eg \Code{ToVars}.
+
+\Code{Declarations} specifies a pattern suitable for use in \Code{Cases}
+that selects all objects to be declared as variables.
 
 \Code{FinalTouch} gives a function which is applied to each final
 subexpression, just before write-out to file.

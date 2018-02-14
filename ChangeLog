@@ -1,4 +1,9 @@
-18 Feb 2018:
+12 Feb 2018:
+
+- (Hopefully) fixed the dreaded NumberMalloc problem in FORM.
+
+
+10 Feb 2018:
 
 - Added missing end-braces in C's $CodeElse, $CodeElseIf.
 
