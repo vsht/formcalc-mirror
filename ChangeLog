@@ -1,3 +1,17 @@
+18 Feb 2018:
+
+- Added missing end-braces in C's $CodeElse, $CodeElseIf.
+
+- Added Declarations option to PrepareExpr.
+
+
+26 Jan 2018:
+
+- Improvements to several scripts in drivers/tools, especially pnuglot.
+
+- Fixed bug in WriteExpr for debug lines in DoLoops.
+
+
 5 Jan 2018:
 
 - Added $RCRes (like $RCTop, $RCIns, $RCAmp) for better diagnostics

@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.6
 Copyright by Thomas Hahn 1996-2018
-last modified 8 Jan 18 by Thomas Hahn
+last modified 10 Feb 18 by Thomas Hahn
 
 Release notes:
 
@@ -1795,6 +1795,11 @@ MakeTmp::usage =
 "MakeTmp is an option of PrepareExpr.  It specifies a function for
 introducing user-defined temporary variables, e.g. ToVars."
 
+Declarations::usage =
+"Declarations is an option of PrepareExpr.  It specifies a pattern suitable
+for Cases (i.e. patt, patt -> rhs, or patt :> rhs) that selects all objects
+to be declared as variables."
+
 FinalTouch::usage =
 "FinalTouch is an option of PrepareExpr.  It specifies a function which
 is applied to each final subexpression, just before write-out to file."
@@ -2075,7 +2080,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.6
 
-$FormCalcVersion = "FormCalc 9.6 (8 Jan 2018)"
+$FormCalcVersion = "FormCalc 9.6 (10 Feb 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -7177,8 +7182,8 @@ SetLanguage["C"] := (
   $CodeEoln = ";";
   $CodeIf = "  if( ";
   $CodeThen = " ) {\n";
-  $CodeElseif = "  else if( ";
-  $CodeElse = "  else {\n";
+  $CodeElseif = "  }\n  else if( ";
+  $CodeElse = "  }\n  else {\n";
   $CodeEndIf = "  }\n";
   $CodeCall = "  ";
   $Code = "C";
@@ -7387,13 +7392,14 @@ Options[PrepareExpr] = {
   DebugLines -> 0,
   DebugLabel -> True,
   MakeTmp -> Identity,
+  Declarations -> (Rule | RuleAdd)[var_, _] :> var,
   FinalTouch -> Identity,
   ResetNumbering -> True }
 
 PrepareExpr[expr_, opt___Rule] :=
-Block[ {optim, expen, minleaf, debug, debtag, optfun, final, reset,
+Block[ {optim, expen, minleaf, debug, debtag, optfun, final, decl, reset,
 process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
-  {optim, expen, minleaf, debug, debtag, mktmp, final, reset} =
+  {optim, expen, minleaf, debug, debtag, mktmp, decl, final, reset} =
     ParseOpt[PrepareExpr, opt];
   process = RhsMap[final, Flatten[SplitExpr @ Prep[#]]] &;
   If[ TrueQ[optim], process = process /. p_Prep :> RemoveDups[p] ];
@@ -7401,12 +7407,12 @@ process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
   tmp[] := NewSymbol["tmp", 0];
   doloop = Hoist@@ Flatten[{expen}];
   new = unpatt[Flatten[{expr}]];
-  vars = Cases[new, (Rule | RuleAdd)[var_, _] :> var, Infinity];
+  vars = Cases[new, decl, Infinity];
   If[ debug > 0, new = addDebug[new] ];
   new = process[mktmp[new]];
   dup[c_] := dup[c] = NewSymbol["dup", 0];
   new = new /. CodeExpr[_, t_, x_] :> (vars = Complement[vars, t]; x);
-  tmps = Cases[new, (ru:Rule | RuleAdd)[var_, _] :> var, Infinity];
+  tmps = Cases[new, decl, Infinity];
   If[ debug < 0, new = addDebug[new] ];
   CodeExpr[MaxDims[vars], MaxDims[Complement[tmps, vars]], Flatten[new]]
 ]
@@ -7702,7 +7708,7 @@ WriteBlock[_, Hold[expr_]] := (expr; {})
 
 WriteBlock[hh_, s_String] := (WriteString[hh, s]; s)
 
-WriteBlock[hh_, Newline[s___String]] := WriteBlock[hh, s <> $Newline]
+WriteBlock[hh_, Newline[s___]] := WriteBlock[hh, s <> $Newline]
 
 WriteBlock[_, DebugLine[_]] = {}
 
