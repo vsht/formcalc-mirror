@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.6
 Copyright by Thomas Hahn 1996-2018
-last modified 15 Mar 18 by Thomas Hahn
+last modified 19 Mar 18 by Thomas Hahn
 
 Release notes:
 
@@ -2096,7 +2096,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.6
 
-$FormCalcVersion = "FormCalc 9.6 (15 Mar 2018)"
+$FormCalcVersion = "FormCalc 9.6 (19 Mar 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -5031,11 +5031,11 @@ mainexpr, rul},
     FormCode["PolarizationSum.frm"]];
 
   FormWrite[hh, fexpr];
-  WriteString[hh, ".sort\ndrop;\n\n"];
+  WriteString[hh, "#call Prepare\n\n"];
   Write[hh, "L SquaredME = ", Plus@@ DeleteCases[fexpr, _Rule], ";"];
 
   WriteString[hh,
-    "\n#call Prepare\n" <>
+    "\n#call eiei\n" <>
     MapThread[{"\n#call PolSum(", ToString[#1], ", ", ToForm[#2], ", ",
         ToString[If[FreeQ[fexpr, (z | zc)[#1]], dim, Dminus4]], ")"}&,
       {legs, masses}] <>

@@ -1,3 +1,8 @@
+19 Mar 2018:
+
+- More efficient collecting of terms in PolarizationSum.
+
+
 15 Mar 2018:
 
 - PrepareExpr now generates `individualized' tmp and dup var names,
