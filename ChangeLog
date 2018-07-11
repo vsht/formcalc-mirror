@@ -1,3 +1,29 @@
+11 Jul 2018:
+
+- SubstAbbr, SubstSimpleAbbr accept a further optional 'deny' argument.
+  Variables are substituted only if they do not match 'deny'.
+
+- Added HoldCode[expr] which preserves expr until write-out to
+  Fortran or C.  Similar to HoldForm except that argument is
+  not held unevaluated.
+
+
+7 Jul 2018:
+
+- Extended Abbreviate[expr, func] so that func can return True and False
+  (as before) and also a subexpression of its argument, for which the
+  abbreviation is then introduced.
+
+- New function FindDeps finds all variables in a list of definitions
+  whose rhs directly or indirectly depends on a given pattern.
+
+
+27 Jun 2018:
+
+- Added f @ m notation for {Mass,Field,Width}RC, as in:
+  MassRC[S[3] @ MA0tree].
+
+
 16 Apr 2018:
 
 - Fixed `mysterious' problem in simplification code in PolarizationSum.frm
