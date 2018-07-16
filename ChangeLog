@@ -1,3 +1,8 @@
+16 Jul 2018:
+
+- Fixed two small issues with library detection in configure.
+
+
 11 Jul 2018:
 
 - SubstAbbr, SubstSimpleAbbr accept a further optional 'deny' argument.
