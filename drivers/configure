@@ -1,7 +1,7 @@
 #! /bin/bash
 # configure script for FormCalc-generated code
 # note: has nothing to do with GNU autoconf
-# last modified 16 Jul 18 th
+# last modified 19 Jul 18 th
 
 
 exec 2> ${LOGFILE:-/dev/null} 3>&1
@@ -154,6 +154,7 @@ setflags() {
 set -- `eval $CONF_FC --version -c | sed '/^$/d;s/(.*)//;q' 2>&1`
 case "$1,$2,$3" in
 GNU,Fortran,[123].*)
+  CONF_SIMD=0
   eval setflags FFLAGS "\
 ${FFLAGS-${CONF_DEBUG:--O1} ${CONF_DEBUG:+-Wall}} \
 $CONF_ARCH $CONF_AS $CONF_BITS -ffixed-line-length-none -fno-range-check \
@@ -161,6 +162,7 @@ $CONF_STATIC \
 $CONF_LDFLAGS"
   ;;
 GNU,Fortran,4.*)
+  CONF_SIMD=0
   eval setflags FFLAGS "\
 ${FFLAGS-${CONF_DEBUG:--O3} ${CONF_DEBUG:+-Wall -Wno-unused-dummy-argument -Wtabs -ffpe-trap=invalid,overflow,zero}} \
 $CONF_ARCH $CONF_AS $CONF_BITS -ffixed-line-length-none -fno-range-check \
@@ -169,6 +171,7 @@ ${CONF_STATIC:-$CONF_STATIC_GFORTRAN} ${CONF_STATIC_EXT:+-static-libgfortran -st
 $CONF_LDFLAGS"
   ;;
 GNU,Fortran,*)
+  CONF_SIMD=0
   eval setflags FFLAGS "\
 ${FFLAGS-${CONF_DEBUG:--O3} ${CONF_DEBUG:+-Wall -Wno-unused-dummy-argument -Wno-tabs -ffpe-trap=invalid,overflow,zero}} \
 $CONF_ARCH $CONF_AS $CONF_BITS -ffixed-line-length-none -fno-range-check \

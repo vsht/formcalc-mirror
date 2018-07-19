@@ -1,3 +1,8 @@
+19 Jul 2018:
+
+- (Again) disabled SIMD detection for gfortran.
+
+
 16 Jul 2018:
 
 - Fixed two small issues with library detection in configure.
