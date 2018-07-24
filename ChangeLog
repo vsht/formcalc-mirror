@@ -1,3 +1,8 @@
+23 Jul 2018:
+
+- Fixed bug in WeylME.
+
+
 19 Jul 2018:
 
 - (Again) disabled SIMD detection for gfortran.

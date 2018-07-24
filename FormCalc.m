@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.7
 Copyright by Thomas Hahn 1996-2018
-last modified 11 Jul 18 by Thomas Hahn
+last modified 23 Jul 18 by Thomas Hahn
 
 Release notes:
 
@@ -2116,7 +2116,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.7
 
-$FormCalcVersion = "FormCalc 9.7 (11 Jul 2018)"
+$FormCalcVersion = "FormCalc 9.7 (23 Jul 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2204,7 +2204,7 @@ FilterOpt[f_, opt___] := Sequence@@
   Cases[Flatten[{opt}], _[Alternatives@@ First/@ Options[f], _]]
 
 ParseOpt[f_, opt___] := (
-  Message[func::optx, #, f]&/@ Complement[First/@ {opt}, #];
+  Message[f::optx, #, f]&/@ Complement[First/@ {opt}, #];
   # //. Level[{{opt}, Options[f]}, {2}]
 )&[ First/@ Options[f] ]
 
@@ -4696,8 +4696,8 @@ table HEL(" <> ToString[Min[part]] <> ":" <>
 ]
 
 
-WeylSq[fac_][f_ -> s_, fc_ -> sc_] :=
-  Mat[f, fc] -> f Conjugate[fc] fac[s, sc]
+WeylSq[fac_][f_ -> _, fc_ -> _] :=
+  Mat[f, fc] -> f Conjugate[fc] fac[f, fc]
 
 
 Options[WeylME] = {
@@ -6131,7 +6131,9 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
   mats = Level[MapIndexed[matnan, mats, {2}], {2}];
 
   Attributes[dfCode] = {HoldAll};
-  If[ FreeQ[mats, "MatF"], dfCode[_, x___] := x, dfCode[x_, ___] := x ];
+  If[ FreeQ[mats, "MatF"] || FreeQ[defs, DiracChain],
+    dfCode[_, x___] := x,
+    dfCode[x_, ___] := x ];
 
   FCPrint[2, "writing code modules"];
 
@@ -7856,7 +7858,8 @@ WriteBlock[hh_, ru_[var_, {sub__, expr_}]] :=
 WriteBlock[_, RuleAdd[_, 0]] := Sequence[]
 
 WriteBlock[hh_, RuleAdd[var_, expr_]] := (
-  Write[hh, $CodeIndent, var -> ffun[var + FExpr[expr]], $CodeEoln];
+  Write[hh, $CodeIndent,
+    (var -> HoldForm[var + #])& @ ffun[FExpr[expr]], $CodeEoln];
   WriteString[hh, $Newline];
   var -> var + expr
 )
