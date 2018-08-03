@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.7
 Copyright by Thomas Hahn 1996-2018
-last modified 23 Jul 18 by Thomas Hahn
+last modified 2 Aug 18 by Thomas Hahn
 
 Release notes:
 
@@ -868,11 +868,11 @@ abbreviations for subexpressions.  The expression given here is not
 itself abbreviated but used for determining the summation indices."
 
 AbbrevDo::usage =
-"AbbrevDo[expr, x] invokes the abbreviationing function defined with
-AbbrevSet on expr.  If x is an integer, abbreviations are introduced
-from level x downward.  Otherwise, x is taken as a function name and
-abbreviations are introduced for all subexpressions for which
-x[subexpr] returns True."
+"AbbrevDo[expr, lev], where lev is an integer, introduces abbreviations
+for subexpressions appearing at level lev of expr or deeper.
+AbbrevDo[expr, fun], where fun is a function, introduces abbreviations
+for all subexpressions of expr for which fun[subexpr] returns True.
+AbbrevDo must first be defined by AbbrevSet."
 
 Deny::usage =
 "Deny is an option of Abbreviate.  It specifies items which must not be
@@ -925,20 +925,30 @@ substitutes them back into exprlist.
 SubstAbbr[exprlist, patt, deny] does not substitute variables matching deny."
 
 SubstSimpleAbbr::usage =
-"SubstSimpleAbbr[exprlist] removes `simple' abbreviations of the form
-var -> s where s is a number or a symbol times a number.
+"SubstSimpleAbbr[exprlist] removes (substitutes back) abbreviations which
+match P$SimpleAbbr.
 SubstSimpleAbbr[exprlist, deny] does not substitute variables matching deny."
+
+P$SimpleAbbr::usage =
+"P$SimpleAbbr is a pattern which matches a `simple' abbreviation of the
+form var -> s where s is a number or a symbol times a number."
 
 ExtractInt::usage =
 "ExtractInt[expr] extracts the loop integrals from expr for evaluation
-with LoopTools/OPP.  It output is a list {lint, abbrexpr}, where lint
-is the list of loop integrals and abbrexpr is expr with the loop
-integrals substituted by the identifiers in integrals."
+with LoopTools/OPP.  It output is a list {loopint, abbrexpr}, where
+loopint is the list of loop integrals and abbrexpr is expr with the
+loop integrals substituted by the variables on the l.h.s. of loopint."
 
-$IntPrefix::usage =
-"$IntPrefix[f] specifies the prefix for integrals abbreviated by
-WriteSquaredME and ExtractInt, where f is the head of the loop integral,
-e.g. B0i or Ccut."
+VarSort::usage =
+"VarSort[list] sorts the list of variable definitions (var -> val),
+taking into account explicit priorities (var -> Prio[p][val]) and the
+running numbers of variable names, e.g. abb100 is sorted after abb11."
+
+Prio::usage =
+"var -> Prio[p][val] tells VarSort that the definition var -> val is to
+be sorted with priority p, i.e. after definitions with priority p - 1 and
+before definitions with priority p + 1, where 100 is the default priority.
+VarSort strips the Prio[p] part from the definition."
 
 Pair::usage =
 "Pair[a, b] represents the contraction of the two four-vectors or
@@ -2116,7 +2126,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.7
 
-$FormCalcVersion = "FormCalc 9.7 (23 Jul 2018)"
+$FormCalcVersion = "FormCalc 9.7 (2 Aug 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2230,29 +2240,56 @@ NewSymbol[stub_, 0] := ToExpression[next[stub]]
 NewSymbol[stub_] := ToExpression[NestWhile[next, next[stub], NameQ]]
 
 
+Kind[Tag[___, x_]] := Kind[x]
+
+Kind[h_ -> _] := kind[h]
+
+_Kind = Sequence[]
+
+kind[h_[___], ___] := h
+
+kind[h_, ___] := h
+
+
+VarSort[li_List] := Last/@ Sort[VarPrio/@ li]
+
+VarPrio[elem_] :=
+Block[ {prio = 100, sortas},
+  {prio, sortas, #}& @ VarOrd[elem]
+]
+
+VarOrd[Tag[t___, r_]] := Tag[t, VarOrd[r]]
+
+VarOrd[lhs_ -> Prio[p_][rhs_]] := (prio = p; VarOrd[lhs -> rhs])
+
+VarOrd[lhs_ -> rhs_] := (sortas = SymSplit[kind[lhs]]; lhs -> rhs)
+
+VarOrd[other_] := sortas = other
+
+
+Attributes[SymSplit] = {HoldRest}
+
+SymSplit[sym_, cmd___] :=
+Block[ {s = ToString[sym], i},
+  i = Position[DigitQ/@ Characters[s], False][[-1,1]];
+  {s, i} = StringTake[s, {{1, i}, {i + 1, -1}}];
+  cmd;
+  ToExpression[s][ToExpression[i]]
+]
+
+
 Attributes[ToArray] = {Listable}
 
-ToArray[sym_Symbol] :=
-Block[ {t = ToString[sym], p},
-  p = Position[DigitQ/@ Characters[t], False][[-1,1]];
-  ToExpression[StringTake[t, p]] @ ToExpression[StringDrop[t, p]]
-]
+ToArray[sym_Symbol] := SymSplit[sym]
 
 ToArray[other_] := other
 
 ToArray[expr_, vars__] := expr /. Dispatch[ToArrayRules[expr, vars]]
 
 ToArrayRules[expr_, vars__] :=
-Block[ {v = ToString/@ Flatten[{vars}], t, p, h},
-  Flatten[(
-    t = ToString[#];
-    p = Position[DigitQ/@ Characters[t], False][[-1,1]];
-    h = StringTake[t, p];
-    If[ MemberQ[v, h],
-      # -> ToExpression[h] @ ToExpression[StringDrop[t, p]],
-      {} ]
-  )&/@ Symbols[expr]]
-]
+  Flatten[ToArraySym[ToString/@ Flatten[{vars}]]/@ Symbols[expr]]
+
+ToArraySym[vars_][sym_] := SymSplit[sym, If[!MemberQ[vars, s], Return[{}]]]
 
 
 Renumber[expr_, vars__] := expr /. Dispatch[RenumberRules[expr, vars]]
@@ -2279,17 +2316,6 @@ xran[i_] := i
 
 xran[i_, n_, ___] := {i, n}
 
-
-
-Kind[Tag[___, x_]] := Kind[x]
-
-Kind[h_ -> _] := kind[h]
-
-_Kind = Sequence[]
-
-kind[h_[___], ___] := h
-
-kind[h_, ___] := h
 
 
 Alt[l_List] := Alt@@ Flatten[l]
@@ -3722,7 +3748,7 @@ $FormAbbrDepth = 3
 
 FormPre = AbbrevSet[#, Preprocess -> FormMat]&
 
-FormSub = AbbrevDo[#, 0]&
+FormSub = AbbrevDo
 
 FormDot = DotSimplify[Simplify, TermCollect]
 
@@ -3985,54 +4011,54 @@ MomEncode[f_. k[i_]] := MomEncoding[f, i]
    For the latter the LoopTools functions [BCDEF]put are used to
    compute all tensor coefficients at once. *)
 
-$IntPrefix[f_] := {"Aa", f}
+IntSym[f_, i___] := ToSymbol[f, i, ++intc[f]]
 
-Function[ {X0i, Xput, Nxx, xx0},
+Function[ {X0i, Xput, Nxx},
   AbbrevInt[X0i[i_, args__]] :=
   Block[ {abb},
-    abb[id_] = IndexHeader[ToSymbol[$IntPrefix[X0i], ++lintc][id], args];
+    abb[id_] = IndexHeader[IntSym[X0i][id], args];
     abbint[X0i[id_, args]] = abb[Epsi[id]];
-    lint = {lint, Rule@@ {abb[Nxx_], Call[Xput[AddrOf[abb[xx0]], args]]}};
+    lint = {lint, Rule@@ {abb[Nxx_], Call[Xput[AddrOf[abb[1]], args]]}};
     abb[Epsi[i]]
   ] ]@@@
-{ {B0i, Bput, Nbb, bb0},
-  {C0i, Cput, Ncc, cc0},
-  {D0i, Dput, Ndd, dd0},
-  {E0i, Eput, Nee, ee0},
-  {F0i, Fput, Nff, ff0} }
+{ {B0i, Bput, Nbb},
+  {C0i, Cput, Ncc},
+  {D0i, Dput, Ndd},
+  {E0i, Eput, Nee},
+  {F0i, Fput, Nff} }
 
-Function[ {Xcut, Xmas, Mxx, xx0},
+Function[ {Xcut, Xmas, Mxx},
   AbbrevInt[Xcut[margs__][nargs__]] :=
     abbint[Xcut[abbint[Xmas[margs]], nargs]];
   AbbrevInt[Xcut[args__]] :=
   Block[ {abb},
-    abbint[Xcut[args]] = abb =
-      IndexHeader[ToSymbol[$IntPrefix[Xcut], ++cutc][], args];
+    abbint[Xcut[args]] = abb = IndexHeader[IntSym[Xcut][], args];
     lint = {lint, abb -> MomEncode/@ Xcut[args]};
     abb
   ];
   AbbrevInt[Xmas[args__]] :=
   Block[ {abb},
-    abb[id_] = IndexHeader[ToSymbol[$IntPrefix[Xmas], ++masc][id], args];
+    abb[id_] = IndexHeader[IntSym[Xmas][id], args];
     lint = {lint, Rule@@ {abb[Mxx_], Call[Xmas[AddrOf[abb[1]], args]]}};
     abbint[Xmas[args]] = abb[1]
   ] ]@@@
-{ {Bcut, Bmas, Mbb, bb0},
-  {Ccut, Cmas, Mcc, cc0},
-  {Dcut, Dmas, Mdd, dd0},
-  {Ecut, Emas, Mee, ee0},
-  {Fcut, Fmas, Mff, ff0} }
+{ {Bcut, Bmas, Mbb},
+  {Ccut, Cmas, Mcc},
+  {Dcut, Dmas, Mdd},
+  {Ecut, Emas, Mee},
+  {Fcut, Fmas, Mff} }
 
 AbbrevInt[func_] :=
-Block[ {abb = IndexHeader[ToSymbol[$IntPrefix[Head[func]], ++lintc][], func]},
+Block[ {abb = IndexHeader[IntSym[Head[func], "i"][], func]},
   lint = {lint, abb -> func};
   abbint[func] = abb
 ]
 
 
 ExtractInt[expr_] :=
-Block[ {abbint, new, lint = {}, lc = 0},
+Block[ {abbint, intc, new, lint = {}},
   abbint[f_] := AbbrevInt[f];
+  _intc = 0;
   new = expr /. int:LoopIntegral[__] :> abbint[int];
   {Flatten[lint], new}
 ]
@@ -4104,7 +4130,7 @@ subdef[minleaf_, deny_, fuse_, pre_, ind_] := (
   } /. HoldPattern[subfuse[x_, _]] :> subadd[x] /; fuse;
 
   DownValues[AbbrevDo] = {
-    HoldPattern[AbbrevDo[expr_, lev_Integer]] :>
+    HoldPattern[AbbrevDo[expr_, lev_Integer:0]] :>
       Replace[expr, Plus -> sublev, {lev, Infinity}, Heads -> True],
     HoldPattern[AbbrevDo[expr_, f_]] :>
       Block[{subF = f}, subfun[expr]]
@@ -4329,8 +4355,7 @@ _CSE[] = {}
 CSE[h_, defH_, comH_, rulH_, simp_][abbr__] :=
 Block[ {lot, alias, var, def, com, tmp, new = {}},
   Attributes[lot] = {Flat, Orderless};
-  {var, def, alias} = ToCat[3, defH@@@
-    Sort[{abbr}, Length[ #1[[2]] ] <= Length[ #2[[2]] ] &]];
+  {var, def, alias} = ToCat[3, defH@@@ SortBy[{abbr}, Length[ #[[2]] ]&]];
   def = def /. alias;
 
   Do[
@@ -4347,7 +4372,7 @@ Block[ {lot, alias, var, def, com, tmp, new = {}},
         def[[tmp,0]] = set,
       (* else *)
         tmp = newvar@@ Select[ Union[Level[Take[var, {i, i + 1}], {2}]],
-          !FreeQ[com, #]& ];
+          !FreeQ[com, unpatt[#]]& ];
         new = {new, tmp -> h@@ com};
         def = def /. rulH[com, unpatt[tmp]] ]
     ],
@@ -4374,30 +4399,43 @@ OptimizeAbbr[rul:{__Rule}, simp_:Simplify] := Flatten @
     ToCat[3, AbbrCat/@ rul] }]
 
 
-selectdeny[deny_] := select[r:(deny -> _)] := r
-
-SubstAbbr[exprlist_, patt_, deny___] :=
-Block[ {select, subst, new = exprlist, rul},
-  Attributes[select] = {Listable};
-  selectdeny[deny];
-  select[r:patt] := subst[r] = Sequence[];
-  select[CodeExpr[vars__, expr_]] := CodeExpr[vars, select[expr]];
-  (*select[i_IndexIf] := MapIf[select, i];*)
-  select[other_] := other;
-  While[ ( new = select[new];
-           Length[rul = (#[[1,1,1]]&)/@ DownValues[subst]] > 0 ),
-    new = new /. CodeExpr[var_, tmpvar_, expr_] :>
-      (CodeExpr[DeleteCases[var, #], DeleteCases[tmpvar, #], expr]&[
-        Alt[First/@ rul] ]) //. rul;
-    Clear[subst]
-  ];
-  new
+oneSubst[exprlist_] :=
+Block[ {subst, new, rul, lhs},
+  new = select[exprlist];
+  rul = #[[1,1,1]]&/@ DownValues[subst];
+  If[ Length[rul] === 0, Throw[new] ];
+Print["rul=", rul];
+  lhs := lhs = Alt[First/@ rul];
+  new /.
+    CodeExpr[var_, tmpvar_, expr_] :>
+      CodeExpr[DeleteCases[var, lhs], DeleteCases[tmpvar, lhs], expr] //.
+    rul
 ]
 
-SubstSimpleAbbr[exprlist_, deny___] := SubstAbbr[exprlist,
+nestSubst[exprlist_] := Catch[Nest[oneSubst, exprlist, 10]]
+
+SubstAbbr[exprlist_, patt_, deny___] :=
+Block[ {select, substAbbr, glob = Null, pos},
+  Attributes[select] = {Listable};
+  Scan[(select[r:(# -> _)] := r)&, {deny}];
+  select[r:(var_ -> _)] := r /; !FreeQ[glob, var];
+  select[r:patt] := subst[r] = Sequence[];
+  select[CodeExpr[vars__, expr_]] := CodeExpr[vars, select[expr]];
+  select[i_IndexIf] := MapIf[substAbbr, i];
+  select[other_] := other;
+  NestWhile[
+    ( glob = ReplacePart[#, Null &, pos] /. CodeExpr[__, expr_] :> expr;
+      ReplacePart[#, nestSubst, pos] )&,
+    nestSubst[exprlist],
+    Length[pos = Position[#, substAbbr, Infinity, 1]] > 0 & ]
+]
+
+P$SimpleAbbr =
   (_ -> _Symbol | _?NumberQ | _?NumberQ _Symbol) |
-  ((lhs_ -> rhs_) /; LeafCount[lhs] >= LeafCount[rhs]),
-  deny]
+  ((lhs_ -> rhs_) /; LeafCount[lhs] >= LeafCount[rhs])
+
+SubstSimpleAbbr[exprlist_, deny___] :=
+  SubstAbbr[exprlist, P$SimpleAbbr, deny]
 
 
 (* UV and IR finiteness checks *)
@@ -5497,9 +5535,6 @@ Block[ {rul, p = patt, old = {}},
 depsow[var_, val_] := (Sow[var]; 0) /; !FreeQ[val, Indeterminate]
 
 
-VarSort[li_] := Last/@ Sort[{ToArray[Kind[#]], #}&/@ li]
-
-
 _AbbrMod[{}, _] := Sequence[]
 
 AbbrMod[cat_][abbr_, mod_] :=
@@ -6000,7 +6035,7 @@ Block[ {folder, xrules, prefix, symprefix, header, fincl, sincl,
 vPre, fPre, fPost, sPre, sPost, sEnd, ModName, Hdr, 
 proc = Sequence[], name, legs, invs, $SymbolPrefix,
 mat, nums, abrs, matsel, matsub, defcat, angledep,
-abbint, lint = {}, lintc = 0, cutc = 0, masc = 0,
+abbint, intc, lint = {},
 inds = {}, defs, Indices, pos, file, files, hh,
 unused, maxmat, mats, mmat, nmat, mat1, dfCode, ntree, nloop,
 ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
@@ -6014,6 +6049,7 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
   {sPre, sPost, sEnd} = sDecl[sincl];
 
   abbint[f_] := AbbrevInt[f];
+  _intc = 0;
 
   {mat, nums, abrs} = ToCat[3, Assort@@@ Flatten[{abbr}]];
 
@@ -6035,7 +6071,7 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
     Message[WriteSquaredME::empty]; Return[{}] ];
 
   abrs = abrs /. xrules /. int:LoopIntegral[__] :> abbint[int];
-  lint = Flatten[lint];
+  lint = RhsMap[Prio[1], Flatten[lint]];
 
   mmat = Split[Union[Flatten[#]], #1[[1,0]] === #2[[1,0]]&]&/@
     {maxmat[Cloop], maxmat[Ctree]};

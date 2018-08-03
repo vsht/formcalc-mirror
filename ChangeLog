@@ -1,3 +1,19 @@
+2 Aug 2018:
+
+- Improved Subst[Simple]Abbr: now also looks inside IndexIf.
+
+
+30 Jul 2018:
+
+- Fixed indexing problem in OptimizeAbbr.
+
+
+27 Jul 2018:
+
+- Added VarSort and Prio for better control of sort order of lists
+  of definitions (var -> val).
+
+
 23 Jul 2018:
 
 - Fixed bug in WeylME.
