@@ -1,3 +1,14 @@
+4 Aug 2018:
+
+- Fixed wrong detection of Dirac chains in the counting of the
+  d.o.f. in the helicity loop of WriteSquaredME.
+
+
+3 Aug 2018:
+
+- Removed substituted vars from CodeExpr in Subst[Simple]Abbr.
+
+
 2 Aug 2018:
 
 - Improved Subst[Simple]Abbr: now also looks inside IndexIf.

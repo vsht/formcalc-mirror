@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.7
 Copyright by Thomas Hahn 1996-2018
-last modified 2 Aug 18 by Thomas Hahn
+last modified 4 Aug 18 by Thomas Hahn
 
 Release notes:
 
@@ -2126,7 +2126,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.7
 
-$FormCalcVersion = "FormCalc 9.7 (2 Aug 2018)"
+$FormCalcVersion = "FormCalc 9.7 (4 Aug 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4404,30 +4404,29 @@ Block[ {subst, new, rul, lhs},
   new = select[exprlist];
   rul = #[[1,1,1]]&/@ DownValues[subst];
   If[ Length[rul] === 0, Throw[new] ];
-Print["rul=", rul];
-  lhs := lhs = Alt[First/@ rul];
-  new /.
-    CodeExpr[var_, tmpvar_, expr_] :>
-      CodeExpr[DeleteCases[var, lhs], DeleteCases[tmpvar, lhs], expr] //.
-    rul
+  subs = {subs, rul};
+  new //. rul
 ]
 
 nestSubst[exprlist_] := Catch[Nest[oneSubst, exprlist, 10]]
 
 SubstAbbr[exprlist_, patt_, deny___] :=
-Block[ {select, substAbbr, glob = Null, pos},
+Block[ {select, substAbbr, glob = Null, rm, subs = {}, subvars, pos},
   Attributes[select] = {Listable};
   Scan[(select[r:(# -> _)] := r)&, {deny}];
   select[r:(var_ -> _)] := r /; !FreeQ[glob, var];
   select[r:patt] := subst[r] = Sequence[];
-  select[CodeExpr[vars__, expr_]] := CodeExpr[vars, select[expr]];
+  select[CodeExpr[vars_, tmps_, expr_]] :=
+    CodeExpr[rm[vars], rm[tmps], select[expr]];
   select[i_IndexIf] := MapIf[substAbbr, i];
   select[other_] := other;
+  subvars := subvars = Union[First/@ Flatten[subs]];
   NestWhile[
     ( glob = ReplacePart[#, Null &, pos] /. CodeExpr[__, expr_] :> expr;
       ReplacePart[#, nestSubst, pos] )&,
     nestSubst[exprlist],
-    Length[pos = Position[#, substAbbr, Infinity, 1]] > 0 & ]
+    Length[pos = Position[#, substAbbr, Infinity, 1]] > 0 &
+  ] /. rm[vars_] :> Complement[vars, subvars]
 ]
 
 P$SimpleAbbr =
@@ -5884,9 +5883,9 @@ Assort[m_Mat, x_] := {m -> x, {}, {}}
 
 Assort[v_, n_Num] := {{}, v -> n, {}}
 
-Assort[_, x_] := {{}, {}, {}} /; !FreeQ[x, DiracChain | SUNT]
+Assort[v_, x_] := {{}, {}, v -> x} /; FreeQ[x, DiracChain | SUNT]
 
-Assort[v_, x_] := {{}, {}, v -> x}
+_Assort := Sequence[]
 
 
 ChainHead[om_, n_] := ChainHead[om, n] =
@@ -6032,12 +6031,12 @@ WriteSquaredME[tree_, loop_, dir_, opt___?OptionQ] :=
 
 WriteSquaredME[tree_, loop_, abbr__, dir_, opt___?OptionQ] :=
 Block[ {folder, xrules, prefix, symprefix, header, fincl, sincl,
-vPre, fPre, fPost, sPre, sPost, sEnd, ModName, Hdr, 
+vPre, fPre, fPost, sPre, sPost, sEnd, dfCode, ModName, Hdr, 
 proc = Sequence[], name, legs, invs, $SymbolPrefix,
 mat, nums, abrs, matsel, matsub, defcat, angledep,
 abbint, intc, lint = {},
 inds = {}, defs, Indices, pos, file, files, hh,
-unused, maxmat, mats, mmat, nmat, mat1, dfCode, ntree, nloop,
+unused, maxmat, mats, mmat, nmat, mat1, ntree, nloop,
 ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
 
   {$TreeSquare, $LoopSquare, folder, xrules, prefix, symprefix,
@@ -6050,6 +6049,11 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
 
   abbint[f_] := AbbrevInt[f];
   _intc = 0;
+
+  Attributes[dfCode] = {HoldAll};
+  If[ FreeQ[{abbr}, DiracChain],
+    dfCode[_, x___] := x,
+    dfCode[x_, ___] := x ];
 
   {mat, nums, abrs} = ToCat[3, Assort@@@ Flatten[{abbr}]];
 
@@ -6165,11 +6169,6 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
       "#endif\n\n"] ]];
   helrul = Dispatch[Flatten[helrul]];
   mats = Level[MapIndexed[matnan, mats, {2}], {2}];
-
-  Attributes[dfCode] = {HoldAll};
-  If[ FreeQ[mats, "MatF"] || FreeQ[defs, DiracChain],
-    dfCode[_, x___] := x,
-    dfCode[x_, ___] := x ];
 
   FCPrint[2, "writing code modules"];
 
