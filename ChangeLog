@@ -1,3 +1,9 @@
+16 Aug 2018:
+
+- Type of dup variables in FF modules dynamically determined
+  (no longer always HelType, wrong if HelicityME used).
+
+
 4 Aug 2018:
 
 - Fixed wrong detection of Dirac chains in the counting of the

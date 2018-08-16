@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.7
 Copyright by Thomas Hahn 1996-2018
-last modified 4 Aug 18 by Thomas Hahn
+last modified 16 Aug 18 by Thomas Hahn
 
 Release notes:
 
@@ -2126,7 +2126,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.7
 
-$FormCalcVersion = "FormCalc 9.7 (4 Aug 2018)"
+$FormCalcVersion = "FormCalc 9.7 (16 Aug 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4400,18 +4400,18 @@ OptimizeAbbr[rul:{__Rule}, simp_:Simplify] := Flatten @
 
 
 oneSubst[exprlist_] :=
-Block[ {subst, new, rul, lhs},
+Block[ {subst, new, subs},
   new = select[exprlist];
-  rul = #[[1,1,1]]&/@ DownValues[subst];
-  If[ Length[rul] === 0, Throw[new] ];
-  subs = {subs, rul};
-  new //. rul
+  subs = #[[1,1,1]]&/@ DownValues[subst];
+  If[ Length[subs] === 0, Throw[new] ];
+  allsubs = {allsubs, subs};
+  new //. subs
 ]
 
 nestSubst[exprlist_] := Catch[Nest[oneSubst, exprlist, 10]]
 
 SubstAbbr[exprlist_, patt_, deny___] :=
-Block[ {select, substAbbr, glob = Null, rm, subs = {}, subvars, pos},
+Block[ {select, glob = Null, rm, substAbbr, allsubs = {}, subvars, pos},
   Attributes[select] = {Listable};
   Scan[(select[r:(# -> _)] := r)&, {deny}];
   select[r:(var_ -> _)] := r /; !FreeQ[glob, var];
@@ -4420,9 +4420,9 @@ Block[ {select, substAbbr, glob = Null, rm, subs = {}, subvars, pos},
     CodeExpr[rm[vars], rm[tmps], select[expr]];
   select[i_IndexIf] := MapIf[substAbbr, i];
   select[other_] := other;
-  subvars := subvars = Union[First/@ Flatten[subs]];
+  subvars := subvars = Union[First/@ Flatten[allsubs]];
   NestWhile[
-    ( glob = ReplacePart[#, Null &, pos] /. CodeExpr[__, expr_] :> expr;
+    ( glob = ReplacePart[#, Null &, pos] /. CodeExpr -> (#3 &);
       ReplacePart[#, nestSubst, pos] )&,
     nestSubst[exprlist],
     Length[pos = Position[#, substAbbr, Infinity, 1]] > 0 &
@@ -4674,7 +4674,7 @@ HelicityME[tree_, opt___?OptionQ] := HelicityME[tree, tree, opt]
 
 HelicityME[tree_, loop_, opt___?OptionQ] :=
 Block[ {dim, edit, retain,
-abbr, part, vars, hels, helM, hh, e, mat},
+abbr, ferm, vars, hels, helM, hh, e, mat},
   If[ CurrentProc === {},
     Message[HelicityME::noprocess];
     Abort[] ];
@@ -4688,7 +4688,7 @@ abbr, part, vars, hels, helM, hh, e, mat},
     SelectAbbr[HelicityME][abbr, DiracChain[_Spinor, ___], loop, tree],
     Return[{}] ];
 
-  part = Union[Cases[abbr, Spinor[k[i_], __] :> i, Infinity]];
+  ferm = Union[Cases[abbr, Spinor[k[i_], __] :> i, Infinity]];
 
   abbr = MapIndexed[ConjF, abbr, {2}] /. Lor -> FormLor /.
     Reverse/@ FromFormRules /. Eps -> "e_" /.
@@ -4698,7 +4698,7 @@ abbr, part, vars, hels, helM, hh, e, mat},
 
   FCPrint[1, "> ", Length[mat], " helicity matrix elements"];
 
-  hels = HelTab/@ Hel/@ part;
+  hels = HelTab/@ Hel/@ ferm;
   dim = If[dim === 0, D, 4];
   abbr = Level[abbr, {3}];
   vars = FormVars[dim, {Last/@ abbr, hels}];
@@ -4707,10 +4707,10 @@ abbr, part, vars, hels, helM, hh, e, mat},
   WriteString[hh, "\
 #define FermionChains \"None\"\n\n" <>
     vars[[1]] <> "\n\
-table HEL(" <> ToString[Min[part]] <> ":" <>
-               ToString[Max[part]] <> ", e?);\n" <>
+table HEL(" <> ToString[Min[ferm]] <> ":" <>
+               ToString[Max[ferm]] <> ", e?);\n" <>
     MapThread[{"fill HEL(", ToForm[#1], ") = ", ToForm[#2], ";\n"}&,
-      {part, hels}] <> "\n" <>
+      {ferm, hels}] <> "\n" <>
     FormProcs <>
     FormCode["Common.frm"] <>
     FormCode["HelicityME.frm"]];
@@ -4724,7 +4724,7 @@ table HEL(" <> ToString[Min[part]] <> ":" <>
   WriteString[hh, "#call Emit\n"];
   Close[hh];
 
-  (e[#] = s[#])&/@ part;
+  (e[#] = s[#])&/@ ferm;
   helM[i_, s_] := Hel[i] + s;
 
   FormPre[mat];
@@ -5046,8 +5046,8 @@ Block[ {Hel},
 
 PolarizationSum[expr_, opt___?OptionQ] :=
 Block[ {slegs, dim, gauge, nobrk, edit, retain,
-fexpr, lor, indices, legs, masses, etasubst, vars, hh,
-mainexpr, rul},
+fexpr, lor, indices, legs, masses, e, ferm = {},
+etasubst, dim, vars, hh},
 
   If[ CurrentProc === {},
     Message[PolarizationSum::noprocess];
@@ -5073,7 +5073,8 @@ mainexpr, rul},
   If[ slegs =!= All, legs = Intersection[legs, Flatten[{slegs}]] ];
   masses = Masses[CurrentProc][[legs]];
 
-  fexpr = fexpr /. s -> e /. Reverse/@ FromFormRules /.
+  fexpr = fexpr /. s[i_] :> (ferm = {ferm, i}; e[i]) /.
+    Reverse/@ FromFormRules /.
     {Eps -> "e_", MetricTensor -> "d_", Pair -> Dot} /.
     NoExpandRule /.
     FinalFormRules;
@@ -5116,6 +5117,7 @@ drop;\n\n"] ];
   Close[hh];
 
   nobrk = Alt[nobrk];	(* for DotSimplify *)
+  (e[#] = s[#])&/@ Union[Flatten[ferm]];
   FormPre[fexpr];
 
   Plus@@ FormOutput[][edit, retain][[1]]
@@ -5342,7 +5344,7 @@ Block[ {hh},
     Hdr["form factors for " <> name] <>
     vPre <> fPost <>
     SubroutineDecl[mod] <>
-    vPre ];
+    vPre];
   WriteExpr[hh, {sPost, ff, sEnd, SubroutineEnd[]},
     TmpType -> helType,
     Optimize -> True,
@@ -6037,7 +6039,8 @@ mat, nums, abrs, matsel, matsub, defcat, angledep,
 abbint, intc, lint = {},
 inds = {}, defs, Indices, pos, file, files, hh,
 unused, maxmat, mats, mmat, nmat, mat1, ntree, nloop,
-ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
+ffmods, nummods, abbrmods,
+com, helrul, helvars, dupType, hmax, hfun},
 
   {$TreeSquare, $LoopSquare, folder, xrules, prefix, symprefix,
     header, fincl, sincl} =
@@ -6152,7 +6155,7 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
   abrs = First/@ Join[abrs, lint];
   defs = Map[Select[#, MemberQ[abrs, First[#]]&]&, defs, {2}];
 
-  {com, helrul} = Reap[helDim[Hel[1]]; VarDecl[
+  {com, helrul} = Reap[helDim/@ Array[Hel, legs]; VarDecl[
     { Common["varXs"][defs[[1,1]], "ComplexType",
                       defs[[1,2]], "ComplexType"],
       Common["varXa"][defs[[2,1]], "ComplexType",
@@ -6167,7 +6170,13 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
     NotEmpty["#ifndef NUM_H\n",
       Last/@ nums, Extern,
       "#endif\n\n"] ]];
-  helrul = Dispatch[Flatten[helrul]];
+  helrul = Flatten[helrul] //Union;
+  helvars = First/@ helrul;
+Global`HELVARS=helvars;
+Global`DUPVARS={};
+  dupType = (Global`DUPVARS={Global`DUPVARS, #};
+If[MemberQ[helvars, #], helType, "ComplexType"])&;
+  helrul = Dispatch[helrul];
   mats = Level[MapIndexed[matnan, mats, {2}], {2}];
 
   FCPrint[2, "writing code modules"];
