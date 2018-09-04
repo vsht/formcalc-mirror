@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.7
 Copyright by Thomas Hahn 1996-2018
-last modified 16 Aug 18 by Thomas Hahn
+last modified 31 Aug 18 by Thomas Hahn
 
 Release notes:
 
@@ -1728,9 +1728,19 @@ FinalFunction::usage =
 applied to the final expressions, just before write-out to Fortran or C."
 
 Type::usage =
-"Type is an option of WriteExpr.  If a string is given, e.g. Type ->
-\"double precision\", WriteExpr writes out declarations of that type for
-the given expressions.  Otherwise no declarations are produced."
+"Type is an option of WriteExpr.  Admissible values are a string, rules,
+a function, or False. 
+If a string is given, e.g. \"RealType\", declarations of that type are
+written out for all variables.
+If rules are given, e.g. {x -> \"RealType\", y -> \"ComplexType\"}, they
+are applied to the list of variables and any string in the result is 
+taken as the type of the corresponding variable. 
+If a function f is given, f[v] is formed for each variable v and if it
+evaluates to a string, that string is taken as the type of variable v.  
+Otherwise f[v][defs] is formed, where defs are the definitions involving
+v and if the output is a string, that is taken as the type of v.
+No declarations are produced for all f[v][defs] that do not evaluate to
+a string, or if an explicit False is given."
 
 TmpType::usage =
 "TmpType is an option of WriteExpr.  It is the counterpart of Type for
@@ -2126,7 +2136,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.7
 
-$FormCalcVersion = "FormCalc 9.7 (16 Aug 2018)"
+$FormCalcVersion = "FormCalc 9.7 (31 Aug 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -5047,7 +5057,7 @@ Block[ {Hel},
 PolarizationSum[expr_, opt___?OptionQ] :=
 Block[ {slegs, dim, gauge, nobrk, edit, retain,
 fexpr, lor, indices, legs, masses, e, ferm = {},
-etasubst, dim, vars, hh},
+etasubst, vars, hh},
 
   If[ CurrentProc === {},
     Message[PolarizationSum::noprocess];
@@ -5346,7 +5356,7 @@ Block[ {hh},
     SubroutineDecl[mod] <>
     vPre];
   WriteExpr[hh, {sPost, ff, sEnd, SubroutineEnd[]},
-    TmpType -> helType,
+    TmpType -> dupType,
     Optimize -> True,
     DebugLines -> $DebugFF, DebugLabel -> fmod];
   Close[hh];
@@ -6155,6 +6165,9 @@ com, helrul, helvars, dupType, hmax, hfun},
   abrs = First/@ Join[abrs, lint];
   defs = Map[Select[#, MemberQ[abrs, First[#]]&]&, defs, {2}];
 
+  helvars = Alt[kind/@ First/@ Flatten[ defs[[3]] ]];
+  _dupType = If[FreeQ[#, helvars], "ComplexType", helType]&;
+
   {com, helrul} = Reap[helDim/@ Array[Hel, legs]; VarDecl[
     { Common["varXs"][defs[[1,1]], "ComplexType",
                       defs[[1,2]], "ComplexType"],
@@ -6170,13 +6183,7 @@ com, helrul, helvars, dupType, hmax, hfun},
     NotEmpty["#ifndef NUM_H\n",
       Last/@ nums, Extern,
       "#endif\n\n"] ]];
-  helrul = Flatten[helrul] //Union;
-  helvars = First/@ helrul;
-Global`HELVARS=helvars;
-Global`DUPVARS={};
-  dupType = (Global`DUPVARS={Global`DUPVARS, #};
-If[MemberQ[helvars, #], helType, "ComplexType"])&;
-  helrul = Dispatch[helrul];
+  helrul = Dispatch[Flatten[helrul] //Union];
   mats = Level[MapIndexed[matnan, mats, {2}], {2}];
 
   FCPrint[2, "writing code modules"];
@@ -7808,10 +7815,10 @@ var, decl, $DoLoop, $IndexIf},
   fcoll = If[ TrueQ[fcoll], TermCollect, Identity ];
   _var = {};
   $DoLoop = $IndexIf = 0;
-  varType[vars, type];
-  varType[tmpvars, tmptype /. Type -> type];
+  varType[vars, type, expr];
+  varType[tmpvars, tmptype /. Type -> type, expr];
   varType[Union[DoIndex/@
-    Cases[expr, DoLoop[_, i__] :> i, Infinity]], indtype];
+    Cases[expr, DoLoop[_, i__] :> i, Infinity]], indtype, expr];
   _var =.;
   decl = newline[VarDecl[ Flatten[#2], #1[[1,1]] ]&@@@ DownValues[var]];
   Flatten[{WriteBlock[hh, IfDecl[declif, decl, expr]]}]
@@ -7822,18 +7829,21 @@ WriteExpr[hh_, expr_, opt___Rule] := WriteExpr[hh,
   FilterOpt[WriteExpr, opt]]
 
 
-varType[_, False] = 0
+varType[_, False, _] = 0
 
-varType[v:{__}, s:_String | {__String}] := var[s] = {var[s], v}
+varType[v:{__}, s:_String | {__String}, _] := var[s] = {var[s], v}
 
-varType[v_List, r:_Rule | {__Rule}] :=
-  MapThread[varSet, {v, Replace[v, r, {1}]}]
+varType[v_List, r:_Rule | {__Rule}, _] :=
+  MapThread[varSet[], {v, Replace[v, r, {1}]}]
 
-varType[v_List, f_] := MapThread[varSet, {v, f/@ v}]
+varType[v_List, f_, expr_] := MapThread[varSet[expr], {v, f/@ v}]
 
-varSet[v_, v_] = 0
 
-varSet[v_, s:_String | {__String}] := var[s] = {var[s], v}
+_varSet[v_, v_] = 0
+
+_varSet[v_, s:_String | {__String}] := var[s] = {var[s], v}
+
+varSet[expr_][v_, f_] := varSet[][v, f[Cases[expr, _[v, _]]]]
 
 
 $DebugPre[1, level_:4] := "#if DEBUG >= " <> ToString[level] <> "\n"

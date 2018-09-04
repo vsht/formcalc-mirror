@@ -1,7 +1,14 @@
-16 Aug 2018:
+3 Sep 2018:
+
+- Fixed trivial error (duplicate variable in Block) in PolarizationSum.
+
+
+17 Aug 2018:
 
 - Type of dup variables in FF modules dynamically determined
   (no longer always HelType, wrong if HelicityME used).
+
+- More settings for Type, TmpType, IndexType options.
 
 
 4 Aug 2018:
