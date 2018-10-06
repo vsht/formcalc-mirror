@@ -1,3 +1,10 @@
+18 Sep 2018:
+
+- ColourSimplify now observes SumOver for Colour and Gluon indices.
+  This is needed for 'hand' calculations only since amplitudes from
+  CalcFeynAmp never have explicit Colour/Gluon SumOvers.
+
+
 3 Sep 2018:
 
 - Fixed trivial error (duplicate variable in Block) in PolarizationSum.

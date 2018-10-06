@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.7
 Copyright by Thomas Hahn 1996-2018
-last modified 31 Aug 18 by Thomas Hahn
+last modified 18 Sep 18 by Thomas Hahn
 
 Release notes:
 
@@ -2136,7 +2136,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.7
 
-$FormCalcVersion = "FormCalc 9.7 (31 Aug 2018)"
+$FormCalcVersion = "FormCalc 9.7 (18 Sep 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4850,18 +4850,36 @@ Conjugate[t_SUNT] ^:= RotateLeft[Reverse[t], 2]
 Conjugate[f_SUNF] ^:= f
 
 
+sunOver[i:Index[Colour, _], n_:SUNN, ___] := sunSum[i, n]
+
+sunOver[i:Index[Gluon, _], n_:(SUNN^2 - 1), ___] := sunSum[i, n]
+
+sunOver[i__] := SumOver[i]
+
+
+Attributes[sunExpand] = {Listable}
+
+sunExpand[expr_] := expr /; FreeQ[expr, sunSum]
+
+sunExpand[expr_. sunSum[i_, n_]] := sunExpand[n expr] /; FreeQ[expr, i]
+
+sunExpand[expr_ sunSum[i_, _]] := sunExpand[expr /. i -> iname@@ i]
+
+sunExpand[expr_] := sunExpand/@ expr
+
+
 ColourSimplify[tree_:1, loop_] :=
-Block[ {res, ind},
-  {res, ind} = Reap[ Conjugate[tree] loop /.
-    {IndexDelta -> idelta, SumOver -> sumover[(Sow[#1]; 1)&, SumOver]} ];
-  Simplify[ Expand[ res /.
-    Cases[ind, i_Index :> (i -> iname@@ i), {2}] /.
+Block[ {res},
+  res = sunExpand[Conjugate[tree] loop /.
+    {IndexDelta -> idelta, SumOver -> sunOver}];
+  res = Expand[res /. 
     {SUNT -> sunText, SUNF -> sunF,
      SUNEps -> sunEps, SUNTSum -> sunTsum} /.
-    sunTrace[a__]^n_. :> Times@@ Table[sunTr[a], {n}]
-  ] /. {sunT[i_, j_] :> Sort[SUNT[i, j]],
-        sunT[g__, i_, i_] :> SUNT[g, 0, 0],
-        sunT -> SUNT, sunEps -> SUNEps} ]
+    sunTrace[a__]^n_. :> Times@@ Table[sunTr[a], {n}]];
+  Simplify[res] /. {
+    sunT[i_, j_] :> Sort[SUNT[i, j]],
+    sunT[g__, i_, i_] :> SUNT[g, 0, 0],
+    sunT -> SUNT, sunEps -> SUNEps}
 ]
 
 
