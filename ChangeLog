@@ -1,3 +1,9 @@
+4 Dec 2018:
+
+- Calculation of Generic diagrams now introduces 'persistent'
+  symbols for generic quantities (beta).
+
+
 18 Sep 2018:
 
 - ColourSimplify now observes SumOver for Colour and Gluon indices.

@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.7
 Copyright by Thomas Hahn 1996-2018
-last modified 18 Sep 18 by Thomas Hahn
+last modified 4 Dec 18 by Thomas Hahn
 
 Release notes:
 
@@ -2136,7 +2136,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.7
 
-$FormCalcVersion = "FormCalc 9.7 (18 Sep 2018)"
+$FormCalcVersion = "FormCalc 9.7 (4 Dec 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4075,18 +4075,46 @@ Block[ {abbint, intc, new, lint = {}},
 
 
 GenNames[amp_] := amp /. {
-  g:G[_][_][__][__] :> coup[g],
-  m_Mass :> mass[m],
-  x_GaugeXi :> xi[x],
-  v:VertexFunction[_][__] :> vf[v] }
+  G[_][cto_][fi__][kin__] :> coup[cto][fi][kin],
+  Mass[fi__] :> mass[fi],
+  GaugeXi[x_] :> xi[x],
+  VertexFunction[cto_][fi__] :> vf[cto][fi] }
 
-coup[g_] := coup[g] = NewSymbol["Coupling"]
+coup[cto_][fi__][kin__] := coup[cto][fi][kin] = Gsym["G", Gfi[fi], Gkin[kin]]
 
-mass[m_] := mass[m] = NewSymbol["Mass"]
+mass[fi_] := mass[fi] = Gsym["M", Gfi[fi]]
 
-xi[x_] := xi[x] = NewSymbol["GaugeXi"]
+xi[fi_] := xi[fi] = Gsym["X", Gfi[fi]]
 
-vf[v_] := vf[v] = NewSymbol["VertexFunction"]
+vf[cto_][fi__] := vf[cto][fi] = Gsym["V", cto, Gfi[fi]]
+
+
+Gsym[h_, r___] := ToSymbol[h,
+  Cases[{r}, Except[s_Symbol /; Context[s] == "System`"],
+    {-1}, Heads -> True]]
+
+
+Gfi[fi__] := gfi/@ {fi} /. Index[Generic, i_] :> FromCharacterCode[103 + i]
+
+gfi[(s:2 | -2) sv_[i_]] := gfi[s/2 (sv /. {SV -> VS, VS -> SV})[i]]
+
+gfi[-fi_[i___]] := ToLowerCase[ToString[fi]][i]
+
+gfi[fi_] := fi
+
+
+Gkin[kin__] := {kin} /. {
+  KI1 | KI2 | KI3 | KI4 | KI5 | KI6 |
+  SI1 | SI2 | SI3 | SI4 | SI5 | SI6 -> Identity,
+  -Mom[i_] :> StringTake["KPQRUV", {i}],
+  Mom[i_] :> StringTake["kpqruv", {i}],
+  FourVector -> Dot,
+  ScalarProduct -> Dot,
+  NonCommutative -> Identity,
+  MetricTensor -> "g",
+  DiracMatrix -> "g",
+  ChiralityProjector[-1] -> "L",
+  ChiralityProjector[+1] -> "R" }
 
 
 GenericList[] := Flatten @

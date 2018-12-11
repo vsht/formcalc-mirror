@@ -88,16 +88,17 @@ test -f $gmp.tar.xz || wget http://ftp.gnu.org/gnu/gmp/$gmp.tar.xz
 src="$PWD"
 dest=/tmp/makebin-build
 rm -fr "$dest" "$src/$1"
-mkdir -p $dest/bin
+mkdir -p "$dest/bin" "$dest/lib"
+ln -s lib "$dest/lib64"
 cp -pf "$src/$gmp.tar.xz" "$src/$zlib.tar.gz" "$src/form.zip" \
   "$src/../drivers/tools/fcc" "$src/../drivers/tools/mcc" \
   "$src/../FormCalc/ReadForm.tm" "$src/../tools/ReadData.tm" $dest/
 ln -s fcc "$dest/f++"
 trap "mv '$dest/bin' '$src/$1'" 0 1 2 3 15
-cd $dest
+cd "$dest"
 
-echo $dest.log
-exec > $dest.log 2>&1
+echo "$dest.log"
+exec > "$dest.log" 2>&1
 
 make BUILD="$build" \
      SRC="$src" \
