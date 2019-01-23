@@ -1,8 +1,8 @@
 (*
 
 This is FormCalc, Version 9.7
-Copyright by Thomas Hahn 1996-2018
-last modified 4 Dec 18 by Thomas Hahn
+Copyright by Thomas Hahn 1996-2019
+last modified 21 Jan 19 by Thomas Hahn
 
 Release notes:
 
@@ -2093,10 +2093,13 @@ $EditorModal::usage =
 non-detached (modal) window."
 
 $FormCalc::usage =
-"$FormCalc contains the version number of FormCalc."
+"$FormCalc gives the FormCalc version as integers {major, minor}."
+
+$FormCalcVersionNumber::usage =
+"$FormCalcVersionNumber gives the FormCalc version as a real number."
 
 $FormCalcVersion::usage =
-"$FormCalcVersion is a string that gives the version of FormCalc."
+"$FormCalcVersion gives the FormCalc version as human-readable string."
 
 $FormCalcDir::usage =
 "$FormCalcDir is the directory from which FormCalc was loaded."
@@ -2134,9 +2137,11 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 9.7
+$FormCalc = {9, 7}
 
-$FormCalcVersion = "FormCalc 9.7 (4 Dec 2018)"
+$FormCalcVersionNumber = 9.7
+
+$FormCalcVersion = "FormCalc 9.7 (21 Jan 2019)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4082,7 +4087,7 @@ GenNames[amp_] := amp /. {
 
 coup[cto_][fi__][kin__] := coup[cto][fi][kin] = Gsym["G", Gfi[fi], Gkin[kin]]
 
-mass[fi_] := mass[fi] = Gsym["M", Gfi[fi]]
+mass[fi_, ___] := mass[fi] = Gsym["M", Gfi[fi]]
 
 xi[fi_] := xi[fi] = Gsym["X", Gfi[fi]]
 
@@ -4090,8 +4095,8 @@ vf[cto_][fi__] := vf[cto][fi] = Gsym["V", cto, Gfi[fi]]
 
 
 Gsym[h_, r___] := ToSymbol[h,
-  Cases[{r}, Except[s_Symbol /; Context[s] == "System`"],
-    {-1}, Heads -> True]]
+  DeleteCases[Level[{r}, {-1}, Heads -> True],
+    s_Symbol /; Context[s] == "System`"]]
 
 
 Gfi[fi__] := gfi/@ {fi} /. Index[Generic, i_] :> FromCharacterCode[103 + i]

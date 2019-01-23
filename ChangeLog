@@ -1,7 +1,21 @@
-4 Dec 2018:
+21 Jan 2019:
 
-- Calculation of Generic diagrams now introduces 'persistent'
-  symbols for generic quantities (beta).
+- Fixed bug in CalcFeynAmp for explicit Dirac indices.
+
+- Version number now available as
+  $FormCalc = {major, minor},
+  $FormCalcVersionNumber = major.minor
+  $FormCalcVersion = "FormCalc major.minor (rev date)"
+
+
+29 Dec 2018:
+
+- Fixed issue with Mass[..., Loop] in Generic diagram simplification.
+
+
+24 Dec 2018:
+
+- Fixed compatibility issue with Mathematica version 9 and below.
 
 
 18 Sep 2018:
