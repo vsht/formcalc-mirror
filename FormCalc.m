@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.7
 Copyright by Thomas Hahn 1996-2019
-last modified 21 Jan 19 by Thomas Hahn
+last modified 8 Mar 19 by Thomas Hahn
 
 Release notes:
 
@@ -1014,6 +1014,11 @@ $KeepDir::usage =
 "$KeepDir specifies the default directory for storing intermediate
 expressions with Keep."
 
+$KeepAbbr::usage =
+"$KeepAbbr = False instructs Keep to not store the Subexpr[] and
+Abbr[] necessary to compute abbreviated expressions.  Note that
+Keep may be unable to fully recover saved expressions this way."
+
 AbbrExpr::usage =
 "AbbrExpr[expr, subexpr, abbr] contains an expression including its
 subexpressions and abbreviations.  This format is used by Keep for
@@ -1611,6 +1616,8 @@ for use in a preprocessor #define."
 ToFortran::usage =
 "ToFortran has been superseded by ToCode."
 
+ToFortran = ToCode
+
 SetLanguage::usage =
 "SetLanguage[lang] sets the language for source code, currently
 \"Fortran\" or \"C\"."
@@ -2141,7 +2148,7 @@ $FormCalc = {9, 7}
 
 $FormCalcVersionNumber = 9.7
 
-$FormCalcVersion = "FormCalc 9.7 (21 Jan 2019)"
+$FormCalcVersion = "FormCalc 9.7 (21 Feb 2019)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2401,17 +2408,20 @@ Keep[cmd_] := Keep[cmd, ToString[Hash[Hold[cmd]]], $KeepDir]
 Keep[cmd_, name_String] := Keep[cmd, name, $KeepDir]
 
 Keep[cmd_, name_String, prefix_String] :=
-Block[ {file = ChkExist[prefix, name <> ".m"], res, subexpr, abbr},
+Block[ {file = ChkExist[prefix, name <> ".m"], save, res, subexpr, abbr},
   If[ FileType[file] === File,
     FCPrint[1, "loading ", file];
     KeepGet[Get[file]],
   (* else *)
-    res = cmd;
-    subexpr = Subexpr[];
-    If[ FreeQ[res, Alt[Kind/@ subexpr]], subexpr = {} ];
-    abbr = Abbr[];
-    If[ FreeQ[{res, subexpr}, Alt[Kind/@ abbr]], abbr = {} ];
-    Put[AbbrExpr[res, subexpr, abbr], file];
+    save = res = cmd;
+    If[ $KeepAbbr =!= False,
+      subexpr = Subexpr[];
+      If[ FreeQ[res, Alt[Kind/@ subexpr]], subexpr = {} ];
+      abbr = Abbr[];
+      If[ FreeQ[{res, subexpr}, Alt[Kind/@ abbr]], abbr = {} ];
+      save = AbbrExpr[res, subexpr, abbr];
+    ];
+    Put[save, file];
     FCPrint[1, "saved in ", file];
     res ]
 ]
@@ -2462,8 +2472,6 @@ ToCode[x_String] := x
 ToCode[x_List] := StringTake[toCode[x], {6, -2}]
 
 ToCode[x_] := toCode[x]
-
-ToFortran[x_] := ToCode[x]	(* legacy *)
 
 ToDef[x_] := StringReplace[ToCode[x], {" " -> "", "\"" -> ""}]
 
@@ -2837,12 +2845,14 @@ prop[p_, m__] := prop[-p, m] /; !FreeQ[p, -q1]
 prop[p_, m_, d___] := Den[p, m^2, d]
 
 
+(*
 loop[a___, Den[p_, m_], b___, Den[p_, x_ m_], c___] :=
   loop[a, Den[p, m] - Den[p, x m], b, c] Den[m, 0]/(1 - x)
 
 loop[a___, Den[p_, m1_], b___, Den[p_, m2_], c___] :=
   loop[a, Den[p, m1] - Den[p, m2], b, c]/(m1 - m2) (* *Den[m1, m2]*) /;
   m1 =!= m2
+*)
 
 (*
 loop[a___, Den[p_, m_, d1___], b___, Den[p_, m_, d2___], c___] :=
@@ -3163,7 +3173,7 @@ t_ToIndex[i__] := Sequence@@ t/@ {i}
 
 LevelSelect[_][id_, _, amp_] :=
   AmpName[Select[id, FreeQ[#, Number]&]] ->
-    {FLines[TrivialSums[ampden[GenNames[amp]]]], {}}
+    {FLines[TrivialSums[ampden[amp /. toGen]]], {}}
 
 LevelSelect[Automatic][r__, gm_ -> ins_] := LevelSelect[
   Which[
@@ -3174,7 +3184,7 @@ LevelSelect[Automatic][r__, gm_ -> ins_] := LevelSelect[
 
 LevelSelect[Generic][id_, _, gen_, ___] :=
   AmpName[Select[id, FreeQ[#, Classes | Particles | Number]&]] ->
-    {FLines[ampden[GenNames[gen]]], {}}
+    {FLines[ampden[gen /. toGen]], {}}
 
 LevelSelect[lev_][id_, _, gen_, gm_ -> levins_] :=
 Block[ {ins, red, amp, pc},
@@ -3501,6 +3511,7 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
       PropagatorDenominator -> prop,
       FeynAmpDenominator -> loop,
       FourVector -> fvec,
+      g:G[_][_][__][_] :> g,	(* for gn *)
       ChiralityProjector[c_] :> ga[(13 - c)/2],
       (DiracSlash | DiracMatrix) -> MomThread[ga],
       NonCommutative -> noncomm,
@@ -4079,19 +4090,20 @@ Block[ {abbint, intc, new, lint = {}},
 ]
 
 
-GenNames[amp_] := amp /. {
-  G[_][cto_][fi__][kin__] :> coup[cto][fi][kin],
-  Mass[fi__] :> mass[fi],
-  GaugeXi[x_] :> xi[x],
-  VertexFunction[cto_][fi__] :> vf[cto][fi] }
+toGen = x:(G[_][_][__][__] | _Mass | _GaugeXi | VertexFunction[_][__]) :>
+  gn[x /. Internal | External | Loop :> Sequence[]]
 
-coup[cto_][fi__][kin__] := coup[cto][fi][kin] = Gsym["G", Gfi[fi], Gkin[kin]]
+gn[G[_][cto_][fi__][kin__]] := gn[G[_][cto][fi][kin]] =
+  Gsym["G", Gfi[fi], Gkin[kin]]
 
-mass[fi_, ___] := mass[fi] = Gsym["M", Gfi[fi]]
+gn[Mass[fi_]] := gn[Mass[fi]] =
+  Gsym["M", Gfi[fi]]
 
-xi[fi_] := xi[fi] = Gsym["X", Gfi[fi]]
+gn[GaugeXi[fi_]] := gn[GaugeXi[fi]] =
+  Gsym["X", Gfi[fi]]
 
-vf[cto_][fi__] := vf[cto][fi] = Gsym["V", cto, Gfi[fi]]
+gn[VertexFunction[cto_][fi__]] := gn[VertexFunction[cto][fi]] =
+  Gsym["V", cto, Gfi[fi]]
 
 
 Gsym[h_, r___] := ToSymbol[h,
@@ -4099,11 +4111,11 @@ Gsym[h_, r___] := ToSymbol[h,
     s_Symbol /; Context[s] == "System`"]]
 
 
-Gfi[fi__] := gfi/@ {fi} /. Index[Generic, i_] :> FromCharacterCode[103 + i]
+Gfi[fi__] := gfi/@ {fi} /. i_Index :> FromCharacterCode[Mod[Hash[i], 26] + 97]
 
-gfi[(s:2 | -2) sv_[i_]] := gfi[s/2 (sv /. {SV -> VS, VS -> SV})[i]]
+gfi[(s:2 | -2) sv_[i__]] := gfi[s/2 (sv /. {SV -> VS, VS -> SV})[i]]
 
-gfi[-fi_[i___]] := ToLowerCase[ToString[fi]][i]
+gfi[-fi_[i__]] := fi["b", i]
 
 gfi[fi_] := fi
 
@@ -4113,17 +4125,14 @@ Gkin[kin__] := {kin} /. {
   SI1 | SI2 | SI3 | SI4 | SI5 | SI6 -> Identity,
   -Mom[i_] :> StringTake["KPQRUV", {i}],
   Mom[i_] :> StringTake["kpqruv", {i}],
-  FourVector -> Dot,
-  ScalarProduct -> Dot,
-  NonCommutative -> Identity,
   MetricTensor -> "g",
-  DiracMatrix -> "g",
+  DiracSlash | DiracMatrix -> "ga",
   ChiralityProjector[-1] -> "L",
-  ChiralityProjector[+1] -> "R" }
+  ChiralityProjector[+1] -> "R",
+  FourVector | NonCommutative -> Dot }
 
 
-GenericList[] := Flatten @
-  Apply[dv, DownValues/@ {coup, mass, xi, vf}, {2}]
+GenericList[] := Flatten[dv@@@ DownValues[gn]]
 
 
 Options[ClearProcess] = {

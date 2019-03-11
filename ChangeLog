@@ -1,3 +1,32 @@
+8 Mar 2019:
+
+- Moved partial fractioning of loop denominators...
+	loop[a___, Den[p_, m1_], b___, Den[p_, m2_], c___] :=
+	  loop[a, Den[p, m1] - Den[p, m2], b, c]/(m1 - m2) /;
+	  m1 =!= m2
+  ... to CalcFeynAmp.frm since m1 =!= m2 cannot reliably be evaluated
+  before IndexSimplify.
+
+
+18 Feb 2019:
+
+- Introduced $KeepAbbr = False to not save the Subexpr/Abbr in Keep.
+  Take care: expressions saved this way cannot not in general be fully
+  reconstructed later.
+
+
+29 Jan 2019:
+
+- More quirks in the Generic name mangling removed.
+
+
+28 Jan 2019:
+
+- Fixed name issue with Generic object 'MetricTensor'.
+
+- Improved persistent names for Generic objects.
+
+
 21 Jan 2019:
 
 - Fixed bug in CalcFeynAmp for explicit Dirac indices.
@@ -16,6 +45,11 @@
 24 Dec 2018:
 
 - Fixed compatibility issue with Mathematica version 9 and below.
+
+
+4 Dec 2018:
+
+- Introduced persistent names for Generic objects (couplings, masses etc.).
 
 
 18 Sep 2018:
