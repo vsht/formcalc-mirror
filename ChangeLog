@@ -1,3 +1,20 @@
+4 Apr 2019:
+
+- Added better simplification of (numerical) roots, e.g. Sqrt[2],
+  in FORM.
+
+
+29 Mar 2019:
+
+- Overhauled large parts of the drivers, put Fortran vector syntax
+  in many places.
+
+- Split xsection.F's TotalXS into IterateXS and (new) TotalXS, the latter
+  just for the computation of the XS without looping over phase space.
+
+- Added latest FORM executables.
+
+
 8 Mar 2019:
 
 - Moved partial fractioning of loop denominators...
@@ -248,7 +265,7 @@
   i.e. a statement of the form NoDebug[var -> expr] does not
   produce a debug line.
 
-- Added Unexpr[expr, !patt] to not expand abbreviations and
+- Added Unabbr[expr, !patt] to not expand abbreviations and
   subexpressions inside objects matching patt.
 
 - Fixed the (rather special) case where PolarizationSum is used to

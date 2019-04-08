@@ -1,6 +1,6 @@
-#! /bin/sh -x
+#! /bin/bash -x
 # get and build FORM and the MathLink executables for a given platform
-# last modified 20 Sep 16 th
+# last modified 15 Mar 19 th
 
 gmp=gmp-6.1.2
 zlib=zlib-1.2.11
@@ -14,7 +14,7 @@ clang --version > /dev/null 2>&1 && {
 
 cflags="-O3 -fomit-frame-pointer -ffast-math"
 lin_cflags="$cflags -static"
-mac_cflags="$cflags -fno-pic -mmacosx-version-min=10.6 -stdlib=libstdc++"
+mac_cflags="$cflags -fno-pic -mmacosx-version-min=10.9"
 win_cflags="$cflags"
 ldflags=
 exe=
@@ -24,40 +24,40 @@ Linux)
 	build=i686-unknown-linux-gnu
 	cc=gcc
 	cxx=g++
-	cflags="$lin_cflags -m32"
-	mcflags="-st -b32"
+	cflags="$lin_cflags"
+	bits=32
 	;;
 Linux-x86-64)
 	build=x86_64-unknown-linux-gnu
-	cflags="$lin_cflags -m64"
-	mcflags="-st -b64"
+	cflags="$lin_cflags"
+	bits=64
 	;;
 MacOSX-x86)
 	build=i486-apple-darwin
-	cflags="$mac_cflags -m32 -Wl,-read_only_relocs,suppress"
+	cflags="$mac_cflags -Wl,-read_only_relocs,suppress"
 	ldflags="-Wl,-no_pie"
-	mcflags="-st -b32"
+	bits=32
 	;;
 MacOSX-x86-64)
 	build=x86_64-apple-darwin
-	cflags="$mac_cflags -m64"
+	cflags="$mac_cflags"
 	ldflags="-Wl,-no_pie"
-	mcflags="-st -b64"
+	bits=64
 	;;
 Windows)
 	build=i686-pc-cygwin
-	cc=$build-gcc
-	cxx=$build-g++
-	cflags="$win_cflags -m32"
-	mcflags="-st -b32"
+	cc="$build-gcc"
+	cxx="$build-g++"
+	cflags="$win_cflags"
+	bits=32
 	exe=.exe
 	;;
 Windows-x86-64)
 	build=x86_64-pc-cygwin
-	cc=$build-gcc
-	cxx=$build-g++
-	cflags="$win_cflags -m64"
-	mcflags="-st -b64"
+	cc="$build-gcc"
+	cxx="$build-g++"
+	cflags="$win_cflags"
+	bits=64
 	exe=.exe
 	;;
 *)
@@ -102,11 +102,11 @@ exec > $dest.log 2>&1
 make BUILD="$build" \
      SRC="$src" \
      DEST="$dest" \
+     BITS="$bits" \
      CC="$cc" \
      CXX="$cxx" \
-     CFLAGS="$cflags" \
+     CFLAGS="$cflags -m$bits" \
      LDFLAGS="$ldflags" \
-     MCFLAGS="$mcflags" \
      EXE="$exe" \
      GMP="$gmp" \
      ZLIB="$zlib" -f - << \_EOF_
@@ -124,7 +124,7 @@ CONF2 = $(CONF1) --build="$(BUILD)"
 MCC = \
 CC="./fcc" REALCC="$(CC)" \
 CXX="./f++" REALCXX="$(CXX)" \
-PATH="$(PATH):." mcc $(MCFLAGS) $(CFLAGS)
+PATH="$(PATH):." mcc -st -b$(BITS) $(CFLAGS)
 
 all: FORM ReadForm ReadData
 
@@ -144,7 +144,7 @@ FORM: $(DEST)/lib/libgmp.a $(DEST)/lib/libz.a form.zip
 
 $(DEST)/lib/libgmp.a: $(GMP).tar.xz
 	tar xvf $(GMP).tar.xz
-	cd $(GMP) && $(CONF2) --disable-shared
+	cd $(GMP) && $(CONF2) --disable-shared ABI=$(BITS)
 	cd $(GMP) && $(MAKE) install
 	rm -fr $(GMP)
 

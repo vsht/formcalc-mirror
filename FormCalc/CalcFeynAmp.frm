@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 8 Mar 19 th
+* last modified 6 Apr 19 th
 
 
 #procedure Contract
@@ -410,6 +410,7 @@ id MOM([x]?) = [x];
 #procedure IndexSimplify
 collect mulM;
 
+repeat id root_([n]?, [x]?)*root_([n]?, [y]?) = root_([n], [x]*[y]);
 repeat id powM([x]?, [y]?)^2 = powM([x], 2*[y]);
 repeat id powM([x]?, [y]?) * powM([x]?, [z]?) = powM([x], [y] + [z]);
 id powM([x]?, [y]?int_) = [x]^[y];
@@ -1036,6 +1037,7 @@ id NN(`n') * <Den([i1]?,?p1)>*...*<Den([i`n']?,?p`n')> =
 id NN(1) = 1;
 id NN([i]?) * Dminus4 = Dminus4;
 id paveM() = 1;
+symm paveM;
 
 if( count(paveM,1, NN,1) == 2 ) redefine rep "0";
 

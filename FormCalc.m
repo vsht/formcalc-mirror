@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 9.7
+This is FormCalc, Version 9.8
 Copyright by Thomas Hahn 1996-2019
-last modified 8 Mar 19 by Thomas Hahn
+last modified 4 Apr 19 by Thomas Hahn
 
 Release notes:
 
@@ -2146,9 +2146,9 @@ Begin["`Private`"]
 
 $FormCalc = {9, 7}
 
-$FormCalcVersionNumber = 9.7
+$FormCalcVersionNumber = 9.8
 
-$FormCalcVersion = "FormCalc 9.7 (21 Feb 2019)"
+$FormCalcVersion = "FormCalc 9.8 (4 Apr 2019)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -3418,10 +3418,7 @@ DenyNoExp = {_String, Spinor, Den, intM, PowerOf,
 DenyHide = Level[{SumOver, PowerOf, IndexDelta, IndexEps, SUNObjs},
   {-1}, Alternatives]
 
-FinalFormRules = {
-  (f:_[__])^(n_?Negative) :> powM[f, n],
-  x_^n_ :> powM[x, n] /; !IntegerQ[n],
-  Complex[a_, b_] :> a + "i_" b }
+FinalFormRules = {Power -> FormPower, Complex[re_, im_] :> re + "i_" im}
 
 
 Attributes[CalcFeynAmp] = {Listable}
@@ -3830,7 +3827,22 @@ Block[ {res},
 ]
 
 
+FormPower[Rational[x_, y_], Rational[n_, d_]] := ("root_"[d, x y^(d - 1)]/y)^n
+
+FormPower[y_?NumberQ, Rational[n_?Negative, d_]] := ("root_"[d, y^(d - 1)]/y)^-n
+
+FormPower[x_?NumberQ, Rational[n_, d_]] := "root_"[d, x^n]
+
+FormPower[f:_[__], n_?Negative] := powM[f, n]
+
+FormPower[x_, n_Integer] := x^n
+
+FormPower[other__] := powM[other]
+
+
 (* things to do when the amplitude comes back from FORM *)
+
+root$$[d_, x_] := x^(1/d)
 
 _dummy$$ = 1
 
