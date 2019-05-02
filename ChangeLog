@@ -1,3 +1,20 @@
+12 Apr 2019:
+
+- Computation of generic fermion amplitudes fixed (unresolved SpinorType).
+
+- Improved partial fractioning of loop denominators in FORM.
+
+- Removed spurious IGram instances for PaVeReduce -> LoopTools.
+
+- Added $Dminus4MaxPower (= 1 for one-loop).
+
+
+10 Apr 2019:
+
+- Fixed a few bugs introduced in the last release, most notably one
+  in the F90 rework of ODESolve.F.
+
+
 4 Apr 2019:
 
 - Added better simplification of (numerical) roots, e.g. Sqrt[2],

@@ -1,7 +1,7 @@
 * ODESolve.F
 * ODE solver a la Numerical Recipes
 * this file is part of FormCalc
-* last modified 18 Mar 19 th
+* last modified 10 Apr 19 th
 
 #include "types.h"
 
@@ -40,16 +40,19 @@ c#define WARNINGS
 	parameter (DC5 = -277/14336D0)
 	parameter (C6 = 512/1771D0, DC6 = C6 - .25D0)
 
-	integer nvarmax, maxstep
-	parameter (nvarmax = 8, maxstep = 10000)
+	integer maxstep
+	parameter (maxstep = 10000)
 
-	RealType x0, y0(nvarmax), y(nvarmax), dy(nvarmax,6)
+	RealType x0, yy(nvar,-1:6)
 	RealType h, h0, yerr, yscal, errmax
 	integer i, step
 
-#define Y y(1:nvar)
-#define Y0 y0(1:nvar)
-#define DY(i) dy(1:nvar,i)
+#define y0	yy(1,-1)
+#define Y0	yy(1:nvar,-1)
+#define y	yy(1,0)
+#define Y	yy(1:nvar,0)
+#define dy(i)	yy(1,i)
+#define DY(i)	yy(1:nvar,i)
 
 	h = sign(h1, x2 - x1)
 	x0 = x1
@@ -60,25 +63,25 @@ c#define WARNINGS
 	  print *, "step,stepsize,x ", step, h, x0
 	  print *, "y =", Y0
 #endif
-	  call f(dy(1,1), y0, x0, userarg)
+	  call f(dy(1), y0, x0, userarg)
 	  h0 = h
 	  if( (x0 + h - x2)*(x0 + h - x1) > 0 ) h = x2 - x0
 
 * determine Cash-Karp step
-1	  Y = Y0 + B21*DY(1)*h
-	  call f(dy(1,2), y, x0 + A2*h, userarg)
+1	  Y = Y0 + h*B21*DY(1)
+	  call f(dy(2), y, x0 + A2*h, userarg)
 
-	  Y = Y0 + (B31*DY(1) + B32*DY(2))*h
-	  call f(dy(1,3), y, x0 + A3*h, userarg)
+	  Y = Y0 + h*(B31*DY(1) + B32*DY(2))
+	  call f(dy(3), y, x0 + A3*h, userarg)
 
-	  Y = Y0 + (B41*DY(1) + B42*DY(2) + B43*DY(3))*h
-	  call f(dy(1,4), y, x0 + A4*h, userarg)
+	  Y = Y0 + h*(B41*DY(1) + B42*DY(2) + B43*DY(3))
+	  call f(dy(4), y, x0 + A4*h, userarg)
 
-	  Y = Y0 + (B51*DY(1) + B52*DY(2) + B53*DY(3) + B54*DY(4))*h
-	  call f(dy(1,5), y, x0 + A5*h, userarg)
+	  Y = Y0 + h*(B51*DY(1) + B52*DY(2) + B53*DY(3) + B54*DY(4))
+	  call f(dy(5), y, x0 + A5*h, userarg)
 
-	  Y = Y0 + (B61*DY(1) + B62*DY(2) + B63*DY(3) + B64*DY(4) + B65*DY(5))*h
-	  call f(dy(1,6), y, x0 + A6*h, userarg)
+	  Y = Y0 + h*(B61*DY(1) + B62*DY(2) + B63*DY(3) + B64*DY(4) + B65*DY(5))
+	  call f(dy(6), y, x0 + A6*h, userarg)
 
 	  errmax = maxval(
      &      abs(h*(DC1*DY(1) + DC3*DY(3) + DC4*DY(4) + DC5*DY(5) + DC6*DY(6)))/
@@ -92,10 +95,9 @@ c#define WARNINGS
 #endif
 	  endif
 
+	  Y0 = Y0 + h*(C1*DY(1) + C3*DY(3) + C4*DY(4) + C6*DY(6))
 	  x0 = x0 + h
 	  if( (x0 - x2)*(x2 - x1) >= 0 ) goto 9
-
-	  Y0 = Y0 + h*(C1*DY(1) + C3*DY(3) + C4*DY(4) + C6*DY(6))
 
 	  if( errmax > errcon ) then
 	    h = safety*h*errmax**pgrow

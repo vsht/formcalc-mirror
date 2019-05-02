@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 6 Apr 19 th
+* last modified 25 Apr 19 th
 
 
 #procedure Contract
@@ -12,6 +12,24 @@ repeat once e_([i]?, [j]?, [k]?, [LA]?)*e_([I]?, [J]?, [K]?, [LA]?) =
   ( d_([i], [I]) * (d_([j], [J])*d_([k], [K]) - d_([j], [K])*d_([k], [J])) +
     d_([i], [J]) * (d_([j], [K])*d_([k], [I]) - d_([j], [I])*d_([k], [K])) +
     d_([i], [K]) * (d_([j], [I])*d_([k], [J]) - d_([j], [J])*d_([k], [I])) );
+#endprocedure
+
+***********************************************************************
+
+#procedure ConjChain
+argument dirM, 1;
+  argument CC;
+    id g_(iM, [mu]?) = -CC([mu]);
+    chainin CC;
+    id CC(?a) = CC(reverse_(?a));
+    id g5_(iM) * CC(?a) = g_(iM, ?a, 5_);
+    id g6_(iM) * CC(?a) = g_(iM, ?a, 6_);
+    id g7_(iM) * CC(?a) = g_(iM, ?a, 7_);
+    id CC(?a) = g_(iM, ?a);
+  endargument;
+  id CC([x]?) = [x];
+  id FC([x]?) = [x];
+endargument;
 #endprocedure
 
 ***********************************************************************
@@ -534,7 +552,7 @@ hide;
 #call CommonDecl
 
 * variables appearing in the CalcFeynAmp input and output
-s D, Dminus4;
+s D, Dminus4(:`Dminus4MaxPower');
 s Gamma5Test, Finite, MuTilde, MuTildeSq, Renumber;
 s tnj, xnj, b0nj, b1nj, b2nj;
 cf SumOver, PowerOf, Den, A0, IGram, List;
@@ -564,7 +582,7 @@ cf TMP, MOM, ABB, SUNX, ORD, CH, SIGN(antisymm);
 cf NEQ, NN, FF, DROP, JGRAM, D1, D2, E1, E2, HDEL;
 t NUM, EQ, DD, EPS(antisymm);
 nt GB, GC, GD;
-f CC, WC;
+f FC, CC;
 set MOMS: k1,...,k`Legs';
 set COLS: Col1,...,Col`Legs';
 
@@ -616,25 +634,11 @@ repeat;
     dirM([x]*[y], [i], [k]);
   id dirM([x]?, [i]?, [j]?) * dirM([y]?, [k]?, [j]?) =
     dirM([x]*CC([y]), [i], [k]);
-  id dirM([x]?, [j]?, [i]?) * dirM([y]?, [j]?, [k]?) =
+  also ifnomatch->1 dirM([x]?, [j]?, [i]?) * dirM([y]?, [j]?, [k]?) =
     dirM(CC([x])*[y], [i], [k]);
-  argument dirM, 1;
-    argument CC;
-      id g_(iM, [mu]?) = -CC([mu]);
-      chainin CC;
-      id CC(?a) = CC(reverse_(?a));
-      id g5_(iM) * CC(?a) = g_(iM, ?a, 5_);
-      id g6_(iM) * CC(?a) = g_(iM, ?a, 6_);
-      id g7_(iM) * CC(?a) = g_(iM, ?a, 7_);
-      id CC(?a) = g_(iM, ?a);
-    endargument;
-    id CC([x]?) = [x];
-  endargument;
+#call ConjChain
+  label 1;
 endrepeat;
-
-id dirM([x]?, [i]?) * dirM([y]?, [i]?, [j]?) *
-     dirM(Spinor(?k, [s2]?)*gi_(iM), [j]?) =
-  dirM([x]*[y]*Spinor(?k, -[s2]), [i], [j]);
 
 $fline = 1;
 id dirM([x]?, [i]?, [i]?) = -CH([x]);
@@ -642,6 +646,16 @@ while( count(CH,1) );
   once CH([x]?) = TMP([x]*replace_(iM, $fline));
   $fline = $fline + 1;
 endwhile;
+
+id dirM(Spinor(?p, [s1]?)*gi_(iM), [i]?) *
+   dirM([x]?, [i]?, [j]?) *
+   dirM(Spinor(?k, [s2]?)*gi_(iM), [j]?) =
+  TMP( TMP(Spinor(?p, [s1]), Spinor(?k, -[s2]), FC([x])),
+       TMP(Spinor(?k, [s2]), Spinor(?p, -[s1]), CC([x])) );
+symm TMP;
+id TMP(TMP(Spinor([p1]?, ?a), Spinor([p2]?, ?b), [x]?), ?r) =
+  dirM(Spinor([p1], ?a)*[x]*Spinor([p2], ?b), [p1], [p2]);
+#call ConjChain
 
 $fline = 100;
 while( count(dirM,1) );
@@ -669,7 +683,7 @@ repeat;
   renumber;
 endrepeat;
 
-mul replace_(g5M, g5_, g6M, g6_, g7M, g7_);
+mul replace_(g5M,g5_, g6M,g6_, g7M,g7_);
 
 #do i = 1, 10
 trace4, `i';
@@ -775,6 +789,11 @@ b `LoopMomenta', intM;
 .sort
 keep brackets;
 
+repeat id intM(?a, Den([p1]?, [m1]?), ?b, Den([p1]?, [m2]?!{[m1]?}), ?c) =
+  (intM(?a, Den([p1], [m1]), ?b, ?c) -
+   intM(?a, Den([p1], [m2]), ?b, ?c))*
+  Den([m1], [m2]);
+
 #if `OPP' <= `IntMax'
 id intM(?d) = intM(nargs_(?d), ?d);
 id intM([n]?{<`OPP'}, ?d) = intM(?d);
@@ -784,10 +803,6 @@ also intM([n]?, ?d) = cutM(?d)
 #endif
   ;
 #endif
-
-id intM(?a, Den([p1]?, [m1]?), ?b, Den([p1]?, [m2]?!{[m1]?}), ?c) =
-  (intM(?a, Den([p1], [m1]), ?b, ?c) - intM(?a, Den([p1], [m2]), ?b, ?c))/
-  ([m1] - [m2]);
 
 argument intM;
 id Den([p1]?, ?m) = Den(?m)*MOM([p1]);
@@ -993,7 +1008,7 @@ endargument;
 
 id IGram([x]?, [p1]?.[p1]?) * [p1]?.[p1]? = [x];
 
-#if "`PaVeReduce'" == "True"
+#if "`PaVeReduce'" != "False"
 id IGram([x]?, [y]?) = IGram(TMP([x]), TMP([y]));
 argument IGram;
 argument TMP;
@@ -1237,16 +1252,16 @@ id Spinor(?a) * GA(?g) * Spinor(?b) =
 repeat;
   once CH([s1]?, [x]?, ?a, [LA]?, ?b) *
        CH([s2]?, [y]?, ?c, [LA]?, ?d) =
-    WC(sign_(nargs_(?a, ?c) + [x] + [y]), [s1], [x], ?a) *
-    WC(?b) * WC([s2], [y], ?c) * WC(?d);
+    FC(sign_(nargs_(?a, ?c) + [x] + [y]), [s1], [x], ?a) *
+    FC(?b) * FC([s2], [y], ?c) * FC(?d);
 
 * Fierz 1: <A|sig_mu|B> <C|sigbar^mu|D> = 2 <A|D> <C|B>
-  id WC(-1, ?a) * WC(?b) * WC(?c) * WC(?d) =
+  id FC(-1, ?a) * FC(?b) * FC(?c) * FC(?d) =
     2 * CH(?a, ?d) * CH(?c, ?b);
 
 * Fierz 2: <A|sig(bar)_mu|B> <C|sig(bar)^mu|D> = 2 <A|eps|C> <B|eps|D>
-  also WC(1, ?a) * WC(?b, Spinor(?s1, [s1]?)) *
-         WC(Spinor(?s2, [s2]?), [x]?, ?c) * WC(?d) =
+  also FC(1, ?a) * FC(?b, Spinor(?s1, [s1]?)) *
+         FC(Spinor(?s2, [s2]?), [x]?, ?c) * FC(?d) =
     2 * CH(?a, reverse_(?c), Spinor(?s2, 1 - [s2])) *
       CH(Spinor(?s1, 1 - [s1]),
         7 - mod_([x] + nargs_(?b, ?c), 2),
