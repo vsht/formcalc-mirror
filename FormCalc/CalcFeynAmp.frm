@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 25 Apr 19 th
+* last modified 10 Jun 19 th
 
 
 #procedure Contract
@@ -439,6 +439,8 @@ repeat;
   renumber;
   id TMP([x]?) = [x];
 endrepeat;
+
+id SumOver([i]?, Renumber) = 1;
 
 #ifdef `Inserted'
 repeat;

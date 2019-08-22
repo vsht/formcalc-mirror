@@ -1,3 +1,8 @@
+10 Jun 2019:
+
+- Fixed issue with IndexSum on fermion chains.
+
+
 12 Apr 2019:
 
 - Computation of generic fermion amplitudes fixed (unresolved SpinorType).
