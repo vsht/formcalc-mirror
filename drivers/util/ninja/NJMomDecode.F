@@ -4,7 +4,7 @@
 * the momenta's (integer*1) prefactors are encoded as the
 * bytes of an integer*8
 * this file is part of FormCalc
-* last modified 18 Mar 19 th
+* last modified 22 Aug 19 th
 
 #include "types.h"
 #include "util.h"
@@ -29,7 +29,7 @@
 
 	do while( c /= 0 )
 	  i = i + 1
-	  a = a + iand(c, 255)*K(:,:,i)
+	  a = a + iand(c, 255_8)*K(:,:,i)
 	  c = ishft(c, -8)
 	enddo
 

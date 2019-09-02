@@ -1,3 +1,10 @@
+2 Sep 2019:
+
+- Fixed gfortran hiccup with integer*8 in *MomDecode.F.
+
+- Upgraded to latest FORM version.
+
+
 10 Jun 2019:
 
 - Fixed issue with IndexSum on fermion chains.
