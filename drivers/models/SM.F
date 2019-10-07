@@ -1,7 +1,7 @@
-* model_sm.F
+* SM.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 14 Jan 16 th
+* last modified 29 Sep 19 th
 
 
 #ifndef MB_SCHEME
@@ -12,7 +12,7 @@
 #define MSBAR(o) o
 
 
-	subroutine ModelDefaults(argc, argv)
+	subroutine SMDefaults(argc, argv)
 	implicit none
 	integer argc
 	character*128 argv(*)
@@ -111,7 +111,7 @@
 
 ************************************************************************
 
-	subroutine ModelConstIni(fail)
+	subroutine SMConstIni(fail)
 	implicit none
 	integer fail
 
@@ -124,7 +124,7 @@
 
 ************************************************************************
 
-	subroutine ModelVarIni(fail, Q)
+	subroutine SMVarIni(fail, Q)
 	implicit none
 	integer fail
 	RealType Q
@@ -153,7 +153,7 @@
 
 ************************************************************************
 
-	subroutine ModelDigest
+	subroutine SMDigest
 	implicit none
 
 #include "decl.h"

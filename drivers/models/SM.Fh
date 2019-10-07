@@ -1,7 +1,7 @@
-* model_sm.h
-* declarations for model_sm.F
+* SM.Fh
+* declarations for SM.F
 * this file is part of FormCalc
-* last modified 06 Jun 17 cs
+* last modified 6 Oct 19 th
 
 
 #ifndef CKMC

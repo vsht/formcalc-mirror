@@ -1,11 +1,11 @@
-* model_mssm.F
+* MSSM.F
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 18 Mar 19 th
+* last modified 29 Sep 19 th
 
 
-* The input parameters for model_mssm are:
+* The input parameters are:
 
 * Higgs sector:
 *   TB
@@ -136,20 +136,11 @@
 #define SIMPLE 7273712
 #define FEYNHIGGS 7273713
 
-#define ModelDefaults SMDefaults
-#define ModelConstIni SMConstIni
-#define ModelVarIni SMVarIni
-#define ModelDigest SMDigest
-#include "model_sm.F"
-#undef ModelDefaults
-#undef ModelConstIni
-#undef ModelVarIni
-#undef ModelDigest
-
+#include "SM.F"
 
 ************************************************************************
 
-	subroutine ModelDefaults(argc, argv)
+	subroutine MSSMDefaults(argc, argv)
 	implicit none
 	integer argc
 	character*128 argv(*)
@@ -173,7 +164,7 @@
 
 ************************************************************************
 
-	subroutine ModelConstIni(fail)
+	subroutine MSSMConstIni(fail)
 	implicit none
 	integer fail
 
@@ -209,7 +200,7 @@
 
 ************************************************************************
 
-	subroutine ModelVarIni(fail, Q)
+	subroutine MSSMVarIni(fail, Q)
 	implicit none
 	integer fail
 	RealType Q
@@ -243,7 +234,7 @@
 
 ************************************************************************
 
-	subroutine ModelDigest
+	subroutine MSSMDigest
 	implicit none
 
 #include "decl.h"

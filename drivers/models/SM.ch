@@ -1,8 +1,8 @@
 #if 0
-	model_sm.h
-	declarations for model_sm.F
+	SM.ch
+	C declarations for SM.F
 	this file is part of FormCalc
-	last modified 13 Mar 19 th
+	last modified 6 Oct 19 th
 #endif
 
 
