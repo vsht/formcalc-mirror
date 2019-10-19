@@ -1,7 +1,7 @@
 * MSSMFH.F
 * MSSM with parameter initialization via FeynHiggs
 * this file is part of FormCalc
-* last modified 29 Sep 19 th
+* last modified 18 Oct 19 th
 
 
 #ifndef MB_SCHEME
@@ -64,7 +64,7 @@
 	data flags /"400202113"/
 
 	if( argc < 1 .or. argc > 2 )
-     &    stop "model_fh: need arguments <file> [<flags>]"
+     &    stop "MSSMFH: need arguments <file> [<flags>]"
 
 	if( argc >= 2 ) flags = argv(2)
 	call FHSetFlagsString(error, flags)

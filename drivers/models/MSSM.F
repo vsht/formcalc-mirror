@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 29 Sep 19 th
+* last modified 18 Oct 19 th
 
 
 * The input parameters are:
@@ -169,8 +169,6 @@
 	integer fail
 
 #include "decl.h"
-
-	integer nf
 
 	call SMConstIni(fail)
 	if( fail /= 0 ) return
@@ -925,12 +923,10 @@
 	integer mssmpart, fieldren, tanbren, higgsmix, p2approx
 	integer looplevel, loglevel, runningMT, botResum, tlCplxApprox
 	parameter (mssmpart = 4)
-	parameter (fieldren = 0)
-	parameter (tanbren = 0)
 	parameter (higgsmix = 2)
 	parameter (p2approx = 4)
 	parameter (looplevel = 2)
-	parameter (loglevel = 0)
+	parameter (loglevel = 3)
 	parameter (runningMT = 1)
 	parameter (botResum = 1)
 	parameter (tlCplxApprox = 0)
@@ -944,9 +940,8 @@
 
 	ComplexType SAeff
 
-	call FHSetFlags(fail, mssmpart, fieldren, tanbren,
-     &    higgsmix, p2approx, looplevel, loglevel, runningMT,
-     &    botResum, tlCplxApprox)
+	call FHSetFlags(fail, mssmpart, higgsmix, p2approx,
+     &    looplevel, loglevel, runningMT, botResum, tlCplxApprox)
 	if( fail /= 0 ) return
 
 	call FHSetSMPara(fail,

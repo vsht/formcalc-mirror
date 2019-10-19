@@ -1,7 +1,7 @@
 * SM.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 29 Sep 19 th
+* last modified 18 Oct 19 th
 
 
 #ifndef MB_SCHEME
@@ -130,8 +130,6 @@
 	RealType Q
 
 #include "decl.h"
-
-	integer nf
 
 	fail = 0
 
