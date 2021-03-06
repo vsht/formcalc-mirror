@@ -790,24 +790,28 @@ id Den([p1]?, [m1]?) * [p1]?.[p1]? = 1 + [m1]*Den([p1], [m1]);
 
 #if "`KeepTensors'" == "True"
 
-id [q1]?LOOPMOM.[q2]?LOOPMOM = tensM([q1].[q2]);
+id [q1]?LOOPMOM.[q2]?LOOPMOM = tensM([q1].[q2], 1);
 repeat;
-  once [q1]?LOOPMOM.[p1]? = tensM([q1](N100_?))*[p1](N100_?);
+  once [q1]?LOOPMOM.[p1]? = tensM([q1](N100_?), [p1](N100_?));
   renumber;
 endrepeat;
 
 id e_([mu]?, [nu]?, [ro]?, [si]?) = EE([mu], [nu], [ro], [si]);
 
 repeat;
-  once [Q]?(?a, [q1]?LOOPMOM, ?b) = tensM([q1](N100_?))*[Q](?a, N100_?, ?b);
+  once [Q]?(?a, [q1]?LOOPMOM, ?b) = tensM([q1](N100_?), [Q](?a, N100_?, ?b));
   renumber;
 endrepeat;
 
-id EE(?a) = e_(?a);
+repeat;
+  once tensM([s]?, [Q]?(?a, [q1]?LOOPMOM, ?b)) = tensM([s]*[q1](N100_?), [Q](?a, N100_?, ?b));
+  renumber;
+endrepeat;
 
-repeat id tensM([x]?)*tensM([y]?) = tensM([x]*[y]);
-id tensM(?n)*intM(?d) = tensM(?n, intM(?d));
-id intM(?d) = tensM(1, intM(?d));
+id tensM(?n, [x]?)*intM(?d) = tensM(?n, ?d)*[x];
+id intM(?d) = tensM(1, ?d);
+
+id EE(?a) = e_(?a);
 
 #endif
 
