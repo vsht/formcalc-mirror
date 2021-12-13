@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.9
 Copyright by Thomas Hahn 1996-2021
-last modified 7 Jun 21 by Thomas Hahn
+last modified 11 Dec 21 by Thomas Hahn
 
 Release notes:
 
@@ -418,7 +418,7 @@ BeginPackage["FormCalc`",
 
 (* some internal symbols must be visible for FORM/ReadForm *)
 
-{ SUNSum, ReadForm, ReadFormDebug, FormExpr }
+{ SUNSum, ReadForm, ReadFormDebug, ReadFormWrap, FormExpr, FormWrap }
 
 (* some internal symbols made visible for debugging *)
 
@@ -2164,7 +2164,7 @@ $FormCalc = {9, 9}
 
 $FormCalcVersionNumber = 9.9
 
-$FormCalcVersion = "FormCalc 9.9 (7 Jun 2021)"
+$FormCalcVersion = "FormCalc 9.9 (11 Dec 2021)"
 
 $FormCalcDir = DirectoryName[$InputFileName /.
   $HoldPattern[$InputFileName] :>
@@ -2181,6 +2181,8 @@ Print[$FormCalcVersion];
 Print["by Thomas Hahn"];
 
 $ReadForm = ToFileName[$FormCalcBin, "ReadForm"];
+(*$ReadForm = "strace -o /tmp/readform.strace " <> $ReadForm;*)
+(*$ReadForm = "valgrind --leak-check=full --log-file=/tmp/readform.valgrind " <> $ReadForm;*)
 
 Check[
   $ReadFormHandle = Install[$ReadForm],
@@ -3793,7 +3795,12 @@ toform = "!" <> Escape[ToFileName[$FormCalcBin, "ToForm"]] <> " > "
 
 Attributes[FormExpr] = {HoldAll}
 
-FormExpr[x__] := Block[{addM = Plus, mulM = Times, powM = Power, subM}, {x}]
+FormExpr[expr_] := Block[{addM = Plus, mulM = Times, powM = Power, subM}, expr]
+
+
+Attributes[FormWrap] = {HoldRest}
+
+FormWrap[lev_, expr_] := expr
 
 
 	(* simplification settings *)
@@ -3804,7 +3811,9 @@ FormPre = AbbrevSet[#, Preprocess -> FormMat]&
 
 FormSub = AbbrevDo
 
-FormDot = DotSimplify[Simplify, TermCollect]
+(* originally FormDot = DotSimplify[Simplify, TermCollect]
+   but gives segfault on Simplify in Mathematica 12.x *)
+FormDot = TermCollect
 
 FormMat = TermCollect
 
