@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.10
 Copyright by Thomas Hahn 1996-2022
-last modified 28 Mar 22 by Thomas Hahn
+last modified 15 Jul 22 by Thomas Hahn
 
 Release notes:
 
@@ -2164,7 +2164,7 @@ $FormCalc = {9, 10}
 
 $FormCalcVersionNumber = 9.10
 
-$FormCalcVersion = "FormCalc 9.10 (28 Mar 2022)"
+$FormCalcVersion = "FormCalc 9.10 (15 Jul 2022)"
 
 $FormCalcDir = DirectoryName[$InputFileName /.
   $HoldPattern[$InputFileName] :>
@@ -3826,6 +3826,11 @@ FormQC = FormNum =
   TermCollect[DenCancel[#]] (* //. a_ p_Pair + b_ p_Pair :> (a + b) p *) &
 
 FormQF = Simplify
+
+(* originally RCSub = Simplify but segfaults like FormDot above *)
+RCSub = TermCollect
+
+RCInt = Simplify
 
 
 Attributes[Profile] = {HoldFirst}
@@ -7267,11 +7272,6 @@ DSelfEnergy[f:Except[_Rule], opt___Rule] :=
   DSelfEnergy[f -> f, TheMass[f], opt]
 
 DSelfEnergy[f:Except[_Rule], m__] := DSelfEnergy[f -> f, m]
-
-
-RCSub = Simplify
-
-RCInt = Simplify
 
 
 ClearSE[] := Clear[RCCache]
